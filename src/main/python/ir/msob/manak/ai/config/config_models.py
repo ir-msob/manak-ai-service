@@ -49,7 +49,7 @@ class SecurityProperties(BaseModel):
 
 class PythonProperties(BaseModel):
     application: PythonApplicationProperties
-    profiles: Dict[str, str]
+    profiles: Dict[str, list[str]]
     security: Optional[SecurityProperties] = None
 
 
