@@ -1,10 +1,9 @@
 import logging
-from pathlib import Path
 
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 
-from src.main.python.ir.msob.manak.ai.config.config import ConfigLoader
+from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
 from src.main.python.ir.msob.manak.ai.document import document_controller
 
 
@@ -19,7 +18,7 @@ def setup_logging() -> None:
 def create_app() -> FastAPI:
     """Factory function to create FastAPI app."""
     # 🔹 Load configuration
-    config = ConfigLoader().get_config()
+    config = ConfigConfiguration().get_properties()
 
     # 🔹 Initialize FastAPI app
     app = FastAPI(title=config.python.application.name)
@@ -32,17 +31,15 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()  # فقط FastAPI app تعریف می‌شود
+app = create_app()
 
 
 def main() -> None:
     """Start the FastAPI application using Uvicorn."""
     setup_logging()
-    config_path = Path(__file__).resolve().parent / "resources/config/config.yaml"
-    config = ConfigLoader(path=config_path).get_config()
-    port = config.server.port
+    port = ConfigConfiguration().get_properties().server.port
     logging.getLogger("Application").info(f"🚀 Starting AI service on port {port} ...")
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
 
 
 if __name__ == "__main__":

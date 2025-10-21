@@ -5,12 +5,12 @@ from haystack.components.writers import DocumentWriter
 from milvus_haystack import MilvusDocumentStore, MilvusEmbeddingRetriever
 
 from src.main.python.ir.msob.manak.ai.beans.embedder_configuration import EmbedderConfiguration
-from src.main.python.ir.msob.manak.ai.config.config import ConfigLoader
+from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
 from src.main.python.ir.msob.manak.ai.utils.summarizer import ExtractiveSummarizer, AbstractiveSummarizer, \
     HybridSummarizer, HierarchicalSummarizer
 
 logger = logging.getLogger(__name__)
-config = ConfigLoader().get_config()
+config = ConfigConfiguration().get_properties()
 
 
 class DocumentOverviewConfiguration:

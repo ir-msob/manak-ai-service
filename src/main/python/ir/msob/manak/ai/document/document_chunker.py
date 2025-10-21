@@ -3,7 +3,7 @@ from typing import List
 
 from haystack.dataclasses import Document
 
-from src.main.python.ir.msob.manak.ai.config.config import ConfigLoader
+from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
 from src.main.python.ir.msob.manak.ai.document.utils.utils import (
     read_markdown_file,
@@ -21,7 +21,7 @@ class DocumentChunker:
 
     def __init__(self):
         # 🔹 Load configuration
-        self.config = ConfigLoader().get_config()
+        self.config = ConfigConfiguration().get_properties()
 
         logger.info(
             f"DocumentChunker initialized (chunk_size={self.config.application.milvus.document.chunk.chunk_words_size}, overlap={self.config.application.milvus.document.chunk.chunk_overlap})"

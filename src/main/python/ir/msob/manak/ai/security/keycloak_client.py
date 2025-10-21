@@ -2,12 +2,12 @@ import logging
 
 import aiohttp
 
-from src.main.python.ir.msob.manak.ai.config.config import ConfigLoader
+from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
 from src.main.python.ir.msob.manak.ai.security.model.keycloak_token_request import KeycloakTokenRequest
 from src.main.python.ir.msob.manak.ai.security.model.keycloak_token_response import KeycloakTokenResponse
 
 logger = logging.getLogger(__name__)
-config = ConfigLoader().get_config()
+config = ConfigConfiguration().get_properties()
 
 
 class KeycloakClient:

@@ -4,7 +4,7 @@ from typing import List
 from haystack.dataclasses import Document
 
 from src.main.python.ir.msob.manak.ai.beans.embedder_configuration import EmbedderConfiguration
-from src.main.python.ir.msob.manak.ai.config.config import ConfigLoader
+from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
 from src.main.python.ir.msob.manak.ai.document.beans.document_chunk_configuration import DocumentChunkConfiguration
 from src.main.python.ir.msob.manak.ai.document.beans.document_overview_configuration import \
     DocumentOverviewConfiguration
@@ -26,7 +26,7 @@ class MultiStageRetriever:
     """
 
     def __init__(self, config=None):
-        self.config = config or ConfigLoader().get_config()
+        self.config = config or ConfigConfiguration().get_properties()
         self.embedder = EmbedderConfiguration.get_embedder()
         self.overview_retriever = DocumentOverviewConfiguration.get_retriever()
         self.chunk_retriever = DocumentChunkConfiguration.get_retriever()

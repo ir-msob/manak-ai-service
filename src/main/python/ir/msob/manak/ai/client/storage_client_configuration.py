@@ -1,10 +1,10 @@
 import logging
 
 from src.main.python.ir.msob.manak.ai.client.storage_client import StorageClient
-from src.main.python.ir.msob.manak.ai.config.config import ConfigLoader
+from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
 
 logger = logging.getLogger(__name__)
-config = ConfigLoader().get_config()
+config = ConfigConfiguration().get_properties()
 
 
 class StorageClientConfiguration:
