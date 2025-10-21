@@ -1,0 +1,128 @@
+server:
+  port: 8000
+
+python:
+  application:
+    name: "ai-service"
+  profiles:
+    active:
+      - dev
+  security:
+    oauth2:
+      resource_server:
+        jwt:
+          issuer_uri: http://localhost:8080/realms/test-realm
+      client:
+        provider:
+          service_client:
+            issuer_uri: ${spring.security.oauth2.resource-server.jwt.issuer-uri}
+        registration:
+          service_client:
+            client_name: service-client
+            client_id: service-client
+            client_secret: service-client-secret
+            authorization_grant_type: client_credentials
+            client_authentication_method: client_secret_basic
+            scope:
+              - openid
+milvus:
+  uri: "http://localhost:19530"
+
+models:
+  embedding_model: "/home/yaqub/WorkspaceData/huggingface/models/all-MiniLM-L6-v2"
+  summarization_model: "/home/yaqub/WorkspaceData/huggingface/models/distilbart-cnn-12-6"
+  reranker_model: "/home/yaqub/WorkspaceData/huggingface/models/ms-marco-TinyBERT-L-2"
+  cross_model: "/home/yaqub/WorkspaceData/huggingface/models/ms-marco-TinyBERT-L-2"
+
+application:
+  milvus:
+    embedding:
+      model: "${models.embedding_model}"
+      device: "cpu"
+
+    cross:
+      model: "${models.cross_model}"
+
+    document:
+      overview:
+        collection_name: "document_overview"
+        index:
+          type: "IVF_FLAT"
+          params:
+            nlist: 128
+          metric_type: "COSINE"
+        drop_old: false
+        extract_k_per_chunk: 3
+        retriever:
+          top_k: 5
+        abstractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_length: 150
+          min_length: 30
+        extractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_sentences: 150
+      chunk:
+        collection_name: "document_chunk"
+        index:
+          type: "IVF_FLAT"
+          params:
+            nlist: 128
+          metric_type: "COSINE"
+        drop_old: false
+        chunk_words_size: 1200
+        chunk_overlap: 100
+        retriever:
+          rerank_top_k: 10
+          final_summary_extract_k: 8
+        reranker:
+          model: "${models.reranker_model}"
+          device: "cpu"
+        abstractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_length: 150
+          min_length: 30
+        extractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_sentences: 150
+
+    repository:
+      overview:
+        collection_name: "repository_overview"
+        index:
+          type: "IVF_FLAT"
+          params:
+            nlist: 128
+          metric_type: "COSINE"
+        drop_old: false
+        extract_k_per_chunk: 3
+        retriever:
+          top_k: 5
+        abstractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_length: 150
+          min_length: 30
+        extractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_sentences: 150
+      chunk:
+        collection_name: "repository_chunk"
+        index:
+          type: "IVF_FLAT"
+          params:
+            nlist: 128
+          metric_type: "COSINE"
+        drop_old: false
+        chunk_words_size: 800
+        chunk_overlap: 100
+        retriever:
+          rerank_top_k: 10
+        reranker:
+          model: "${models.reranker_model}"
+          device: "cpu"
