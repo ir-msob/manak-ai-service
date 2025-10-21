@@ -19,8 +19,7 @@ def setup_logging() -> None:
 def create_app() -> FastAPI:
     """Factory function to create FastAPI app."""
     # 🔹 Load configuration
-    config_path = Path(__file__).resolve().parent / "resources/config/config.yaml"
-    config = ConfigLoader(path=config_path).get_config()
+    config = ConfigLoader().get_config()
 
     # 🔹 Initialize FastAPI app
     app = FastAPI(title=config.python.application.name)
