@@ -48,10 +48,10 @@ class DocumentChunkConfiguration:
     @classmethod
     def get_pipeline(cls) -> Pipeline:
         if cls._pipeline is None:
-            pipeline = Pipeline()
-            pipeline.add_component("embedder", EmbedderConfiguration.create_embedder())
-            pipeline.add_component("writer", cls.get_writer())
-            pipeline.connect("embedder.documents", "writer.documents")
+            cls._pipeline = Pipeline()
+            cls._pipeline.add_component("embedder", EmbedderConfiguration.create_embedder())
+            cls._pipeline.add_component("writer", cls.get_writer())
+            cls._pipeline.connect("embedder.documents", "writer.documents")
             logger.info("🔄 Pipeline initialized")
         return cls._pipeline
 

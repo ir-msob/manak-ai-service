@@ -12,7 +12,7 @@ class StorageClient:
     """Handles file download operations from storage service with Keycloak authentication."""
 
     def __init__(self):
-        self.storage_service_base_url = "http://storage/api/v1/storage"
+        self.storage_service_base_url = "http://localhost:8586/api/v1/file"
         self.timeout = 30
         self.keycloak_client = KeycloakClientConfiguration.get_keycloak_client()
 
@@ -32,7 +32,7 @@ class StorageClient:
             auth_header = {"Authorization": f"Bearer {token_response.access_token}"}
 
             # Construct the full URL for storage service
-            download_url = f"{self.storage_service_base_url}/file/{file_path.lstrip('/')}"
+            download_url = f"{self.storage_service_base_url}/{file_path.lstrip('/')}"
 
             logger.info("Downloading file from storage service: %s", download_url)
 

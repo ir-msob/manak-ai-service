@@ -11,12 +11,20 @@ def read_markdown_file(res: DocumentResponse, content: str) -> Tuple[str, Dict[s
     Returns (content, metadata) tuple.
 
     Args:
-        content: Markdown content as bytes or string
+        content: Markdown content as string
         filename: Optional filename for error messages
     """
     try:
         # Use frontmatter to parse content from string
-        post = frontmatter.loads(content)
+        # The correct way to parse from string is using frontmatter.loads()
+        # But some versions might have issues, so we'll use a safer approach
+        if hasattr(frontmatter, 'loads'):
+            post = frontmatter.loads(content)
+        else:
+            # Alternative approach for different frontmatter versions
+            import io
+            post = frontmatter.load(io.StringIO(content))
+
         return post.content, post.metadata or {}
 
     except Exception as e:
@@ -38,6 +46,10 @@ def split_markdown_to_sections(text: str) -> List[str]:
     Split markdown text into sections based on headers.
     Returns list of sections.
     """
+    # Ensure text is a string, not bytes
+    if isinstance(text, bytes):
+        text = text.decode('utf-8')
+
     # Split on markdown headings
     parts = re.split(r"\n(?=#+ )", text)
     cleaned = [p.strip() for p in parts if p.strip()]

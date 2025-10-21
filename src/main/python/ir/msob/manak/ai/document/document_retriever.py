@@ -25,8 +25,8 @@ class MultiStageRetriever:
     5. Summarize top-ranked content
     """
 
-    def __init__(self, config=None):
-        self.config = config or ConfigConfiguration().get_properties()
+    def __init__(self):
+        self.config = ConfigConfiguration().get_properties()
         self.embedder = EmbedderConfiguration.get_embedder()
         self.overview_retriever = DocumentOverviewConfiguration.get_retriever()
         self.chunk_retriever = DocumentChunkConfiguration.get_retriever()
@@ -113,11 +113,10 @@ class MultiStageRetriever:
         if not docs:
             return []
         logger.debug("Reranking candidate chunks...")
-        top_k = getattr(self.config.pipeline, "rerank_top_k", 10)
         pairs = [(query, d.content[:512]) for d in docs if d.content]
         scores = self.cross_encoder.predict(pairs)
         ranked = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)
-        reranked = [d for d, _ in ranked[:min(top_k, len(ranked))]]
+        reranked = [d for d, _ in ranked[:min(self.config.application.milvus.document.chunk.retriever.rerank_top_k, len(ranked))]]
         logger.info(f"Selected top {len(reranked)} chunks after reranking.")
         return reranked
 
