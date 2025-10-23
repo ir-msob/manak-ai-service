@@ -1,10 +1,5 @@
-from pydantic import BaseModel
+from src.main.python.ir.msob.manak.ai.base.request_model import RequestModel
 
-class DocumentRequest(BaseModel):
-    file_path: str
-    filename: str
-    file_type: str
 
-    model_config = {
-        "arbitrary_types_allowed": True
-    }
+class DocumentRequest(RequestModel):
+    document_id: str

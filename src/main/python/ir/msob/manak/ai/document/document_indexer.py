@@ -4,6 +4,7 @@ from typing import List
 
 from haystack.dataclasses import Document
 
+from src.main.python.ir.msob.manak.ai.client.dms.document_dto import DocumentDto, Attachment
 from src.main.python.ir.msob.manak.ai.document.beans.document_chunk_configuration import DocumentChunkConfiguration
 from src.main.python.ir.msob.manak.ai.document.beans.document_overview_configuration import \
     DocumentOverviewConfiguration
@@ -29,17 +30,17 @@ class DocumentIndexer:
 
     # ------------------------ Public API ------------------------
 
-    def index(self, dto: DocumentRequest, content: str) -> DocumentResponse:
+    def index(self, dto: DocumentDto, content: str) -> DocumentResponse:
         """Main entry point for indexing a document into Milvus."""
-        document_id = str(uuid.uuid4())
+        attachment: Attachment = dto.get_latest_attachment()
         response = DocumentResponse(
-            id=document_id,
-            file_path=dto.file_path,
-            filename=dto.filename,
-            file_type=dto.file_type
+            document_id=dto.id,
+            file_path=attachment.file_path,
+            file_name=attachment.file_name,
+            mime_type=attachment.mime_type
         )
 
-        context = f"[{dto.filename} | id={document_id}]"
+        context = f"[{dto.get_latest_attachment().file_name} | id={dto.id}]"
         logger.info(f"🚀 Starting indexing {context}")
 
         try:
@@ -72,7 +73,7 @@ class DocumentIndexer:
         logger.info(f"🧠 Generating overview for {context}")
         overview_text = self.overview_generator.generate(chunks)
         overview_doc = Document(
-            id=f"{res.id}_overview",
+            id=f"{res.document_id}_overview",
             content=overview_text,
             meta=self._build_meta(res, doc_type="overview")
         )
@@ -103,8 +104,8 @@ class DocumentIndexer:
     def _build_meta(res: DocumentResponse, doc_type: str) -> dict:
         return {
             "source": res.file_path,
-            "doc_id": res.id,
+            "doc_id": res.document_id,
             "type": doc_type,
-            "file_type": res.file_type,
+            "mime_type": res.mime_type,
             "meta": res.meta,
         }
