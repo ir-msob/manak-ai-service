@@ -6,8 +6,8 @@ from src.main.python.ir.msob.manak.ai.document.document_service import DocumentS
 from src.main.python.ir.msob.manak.ai.document.document_service_configuration import DocumentServiceConfiguration
 from src.main.python.ir.msob.manak.ai.document.model.document_request import DocumentRequest
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
-from src.main.python.ir.msob.manak.ai.document.model.query_request import QueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.query_response import QueryResponse
+from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
+from src.main.python.ir.msob.manak.ai.document.model.document_query_response import DocumentQueryResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -35,8 +35,8 @@ async def add(dto: DocumentRequest):
         raise HTTPException(status_code=500, detail="Failed to process file")
 
 
-@router.post("/query/text", response_model=QueryResponse)
-def query_text(query_request: QueryRequest):
+@router.post("/query/text", response_model=DocumentQueryResponse)
+def query_text(query_request: DocumentQueryRequest):
     if not query_request.query:
         raise HTTPException(status_code=400, detail="Empty query")
     try:

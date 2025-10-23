@@ -7,8 +7,8 @@ from fastapi import HTTPException
 
 from src.main.python.ir.msob.manak.ai.client.dms.dms_client_configuration import DmsClientConfiguration
 from src.main.python.ir.msob.manak.ai.client.dms.document_dto import DocumentDto, Attachment
-from src.main.python.ir.msob.manak.ai.document.model.query_request import QueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.query_response import QueryResponse
+from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
+from src.main.python.ir.msob.manak.ai.document.model.document_query_response import DocumentQueryResponse
 from src.main.python.ir.msob.manak.ai.document.model.document_request import DocumentRequest
 from src.main.python.ir.msob.manak.ai.document.document_indexer import DocumentIndexer
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
@@ -86,7 +86,7 @@ class DocumentService:
             raise RuntimeError(f"Document indexing failed: {str(e)}") from e
 
     # ---------- Query ----------
-    def query(self, query_request: QueryRequest) -> QueryResponse:
+    def query(self, query_request: DocumentQueryRequest) -> DocumentQueryResponse:
         """
         Executes a multi-stage search and summarization process based on a text query.
         """

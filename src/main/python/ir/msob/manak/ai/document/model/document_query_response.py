@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
 
 
-class QueryResponse(BaseModel):
+class DocumentQueryResponse(BaseModel):
     query: Optional[str] = None
     top_k: int
     input_overview: Optional[str] = None

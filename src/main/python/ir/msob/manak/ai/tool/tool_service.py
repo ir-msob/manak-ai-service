@@ -1,7 +1,7 @@
 import logging
 from src.main.python.ir.msob.manak.ai.document.document_service_configuration import DocumentServiceConfiguration
-from src.main.python.ir.msob.manak.ai.document.model.query_request import QueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.query_response import QueryResponse
+from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
+from src.main.python.ir.msob.manak.ai.document.model.document_query_response import DocumentQueryResponse
 from src.main.python.ir.msob.manak.ai.tool.model.invoke_request import InvokeRequest
 from src.main.python.ir.msob.manak.ai.tool.model.invoke_response import InvokeResponse
 
@@ -35,15 +35,15 @@ class ToolService:
                 if query_request_data is None:
                     raise ValueError("Missing required parameter 'queryRequest' for documentQuery tool")
 
-                query_request : QueryRequest = (
+                query_request : DocumentQueryRequest = (
                     query_request_data
-                    if isinstance(query_request_data, QueryRequest)
-                    else QueryRequest.model_validate(query_request_data)
+                    if isinstance(query_request_data, DocumentQueryRequest)
+                    else DocumentQueryRequest.model_validate(query_request_data)
                 )
 
                 logger.debug("Executing document query with params: %s", query_request)
 
-                query_response: QueryResponse = self.document_service.query(query_request)
+                query_response: DocumentQueryResponse = self.document_service.query(query_request)
 
                 invoke_response.result = query_response
                 logger.info("✅ Tool %s executed successfully", invoke_request.tool_id)

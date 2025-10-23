@@ -9,8 +9,8 @@ from src.main.python.ir.msob.manak.ai.document.beans.document_chunk_configuratio
 from src.main.python.ir.msob.manak.ai.document.beans.document_overview_configuration import \
     DocumentOverviewConfiguration
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
-from src.main.python.ir.msob.manak.ai.document.model.query_request import QueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.query_response import QueryResponse
+from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
+from src.main.python.ir.msob.manak.ai.document.model.document_query_response import DocumentQueryResponse
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class MultiStageRetriever:
 
     # ------------------------ Public API ------------------------
 
-    def query(self, query_request: QueryRequest) -> QueryResponse:
+    def query(self, query_request: DocumentQueryRequest) -> DocumentQueryResponse:
         """Runs the full multi-stage retrieval pipeline."""
         logger.info(f"🔍 Starting multi-stage retrieval for query: '{query_request.query}'")
 
@@ -133,15 +133,15 @@ class MultiStageRetriever:
     # ------------------------ Response Builders ------------------------
 
     @staticmethod
-    def _build_response(request: QueryRequest,
+    def _build_response(request: DocumentQueryRequest,
                         overviews: List[Document],
                         chunks: List[Document],
-                        summary: str) -> QueryResponse:
+                        summary: str) -> DocumentQueryResponse:
         """Builds the structured response object."""
         overviews_res = [DocumentResponse(id=o.id, content=o.content, meta=o.meta) for o in overviews]
         chunks_res = [DocumentResponse(id=d.id, content=d.content, meta=d.meta) for d in chunks]
 
-        return QueryResponse(
+        return DocumentQueryResponse(
             query=request.query,
             top_k=request.top_k,
             overviews=overviews_res,
@@ -150,9 +150,9 @@ class MultiStageRetriever:
         )
 
     @staticmethod
-    def _empty_response(request: QueryRequest) -> QueryResponse:
+    def _empty_response(request: DocumentQueryRequest) -> DocumentQueryResponse:
         """Return an empty but valid response if no results found."""
-        return QueryResponse(
+        return DocumentQueryResponse(
             query=request.query,
             top_k=request.top_k,
             overviews=[],

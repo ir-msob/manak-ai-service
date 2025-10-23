@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class QueryRequest(BaseModel):
+class DocumentQueryRequest(BaseModel):
     query: str
     top_k: int = 5
 
