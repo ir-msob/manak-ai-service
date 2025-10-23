@@ -3,14 +3,15 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from src.main.python.ir.msob.manak.ai.document.document_service import DocumentService
+from src.main.python.ir.msob.manak.ai.document.document_service_configuration import DocumentServiceConfiguration
 from src.main.python.ir.msob.manak.ai.document.model.document_request import DocumentRequest
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
-from src.main.python.ir.msob.manak.ai.document.model.text_query_request import TextQueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.text_query_response import TextQueryResponse
+from src.main.python.ir.msob.manak.ai.document.model.query_request import QueryRequest
+from src.main.python.ir.msob.manak.ai.document.model.query_response import QueryResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-service = DocumentService()
+service = DocumentServiceConfiguration.get_document_service()
 
 @router.get("/", response_model=dict)
 def root():
@@ -34,12 +35,12 @@ async def add(dto: DocumentRequest):
         raise HTTPException(status_code=500, detail="Failed to process file")
 
 
-@router.post("/query/text", response_model=TextQueryResponse)
-def query_text(text_query_request: TextQueryRequest):
-    if not text_query_request.query:
+@router.post("/query/text", response_model=QueryResponse)
+def query_text(query_request: QueryRequest):
+    if not query_request.query:
         raise HTTPException(status_code=400, detail="Empty query")
     try:
-        result = service.query_text(text_query_request)
+        result = service.query(query_request)
         return result
     except Exception as e:
         logger.exception("Error querying text: %s", e)

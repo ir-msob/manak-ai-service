@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class TextQueryRequest(BaseModel):
+class QueryRequest(BaseModel):
     query: str
     top_k: int = 5
 

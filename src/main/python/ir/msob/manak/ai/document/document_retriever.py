@@ -9,8 +9,8 @@ from src.main.python.ir.msob.manak.ai.document.beans.document_chunk_configuratio
 from src.main.python.ir.msob.manak.ai.document.beans.document_overview_configuration import \
     DocumentOverviewConfiguration
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
-from src.main.python.ir.msob.manak.ai.document.model.text_query_request import TextQueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.text_query_response import TextQueryResponse
+from src.main.python.ir.msob.manak.ai.document.model.query_request import QueryRequest
+from src.main.python.ir.msob.manak.ai.document.model.query_response import QueryResponse
 
 logger = logging.getLogger(__name__)
 
@@ -35,36 +35,36 @@ class MultiStageRetriever:
 
     # ------------------------ Public API ------------------------
 
-    def query_text(self, text_query_request: TextQueryRequest) -> TextQueryResponse:
+    def query(self, query_request: QueryRequest) -> QueryResponse:
         """Runs the full multi-stage retrieval pipeline."""
-        logger.info(f"🔍 Starting multi-stage retrieval for query: '{text_query_request.query}'")
+        logger.info(f"🔍 Starting multi-stage retrieval for query: '{query_request.query}'")
 
         try:
-            query_emb = self._embed_query(text_query_request.query)
+            query_emb = self._embed_query(query_request.query)
 
-            overviews = self._search_overviews(query_emb, text_query_request.top_k)
+            overviews = self._search_overviews(query_emb, query_request.top_k)
             if not overviews:
                 logger.warning("No overviews retrieved for query.")
-                return self._empty_response(text_query_request)
+                return self._empty_response(query_request)
 
             doc_ids = {o.meta.get("doc_id") for o in overviews if o.meta.get("doc_id")}
             if not doc_ids:
                 logger.warning("No document IDs found in overviews.")
-                return self._empty_response(text_query_request)
+                return self._empty_response(query_request)
 
-            all_chunks = self._retrieve_chunks(doc_ids, query_emb, text_query_request.top_k)
+            all_chunks = self._retrieve_chunks(doc_ids, query_emb, query_request.top_k)
             if not all_chunks:
                 logger.warning("No chunks retrieved for matching documents.")
-                return self._empty_response(text_query_request)
+                return self._empty_response(query_request)
 
-            reranked_chunks = self._rerank(text_query_request.query, all_chunks)
+            reranked_chunks = self._rerank(query_request.query, all_chunks)
             if not reranked_chunks:
                 logger.warning("No reranked chunks found.")
-                return self._empty_response(text_query_request)
+                return self._empty_response(query_request)
 
             summary = self._summarize(reranked_chunks)
 
-            return self._build_response(text_query_request, overviews, reranked_chunks, summary)
+            return self._build_response(query_request, overviews, reranked_chunks, summary)
 
         except Exception as e:
             logger.exception(f"❌ Retrieval pipeline failed: {e}")
@@ -133,15 +133,15 @@ class MultiStageRetriever:
     # ------------------------ Response Builders ------------------------
 
     @staticmethod
-    def _build_response(request: TextQueryRequest,
+    def _build_response(request: QueryRequest,
                         overviews: List[Document],
                         chunks: List[Document],
-                        summary: str) -> TextQueryResponse:
+                        summary: str) -> QueryResponse:
         """Builds the structured response object."""
         overviews_res = [DocumentResponse(id=o.id, content=o.content, meta=o.meta) for o in overviews]
         chunks_res = [DocumentResponse(id=d.id, content=d.content, meta=d.meta) for d in chunks]
 
-        return TextQueryResponse(
+        return QueryResponse(
             query=request.query,
             top_k=request.top_k,
             overviews=overviews_res,
@@ -150,9 +150,9 @@ class MultiStageRetriever:
         )
 
     @staticmethod
-    def _empty_response(request: TextQueryRequest) -> TextQueryResponse:
+    def _empty_response(request: QueryRequest) -> QueryResponse:
         """Return an empty but valid response if no results found."""
-        return TextQueryResponse(
+        return QueryResponse(
             query=request.query,
             top_k=request.top_k,
             overviews=[],

@@ -7,8 +7,8 @@ from fastapi import HTTPException
 
 from src.main.python.ir.msob.manak.ai.client.dms.dms_client_configuration import DmsClientConfiguration
 from src.main.python.ir.msob.manak.ai.client.dms.document_dto import DocumentDto, Attachment
-from src.main.python.ir.msob.manak.ai.document.model.text_query_request import TextQueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.text_query_response import TextQueryResponse
+from src.main.python.ir.msob.manak.ai.document.model.query_request import QueryRequest
+from src.main.python.ir.msob.manak.ai.document.model.query_response import QueryResponse
 from src.main.python.ir.msob.manak.ai.document.model.document_request import DocumentRequest
 from src.main.python.ir.msob.manak.ai.document.document_indexer import DocumentIndexer
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
@@ -86,7 +86,7 @@ class DocumentService:
             raise RuntimeError(f"Document indexing failed: {str(e)}") from e
 
     # ---------- Query ----------
-    def query_text(self, text_query_request: TextQueryRequest) -> TextQueryResponse:
+    def query(self, query_request: QueryRequest) -> QueryResponse:
         """
         Executes a multi-stage search and summarization process based on a text query.
         """
@@ -96,8 +96,8 @@ class DocumentService:
 
         try:
             logger.info("🔍 Processing text query: '%s' (top_k=%d)",
-                        text_query_request.query, text_query_request.top_k)
-            response = self.searcher.query_text(text_query_request)
+                        query_request.query, query_request.top_k)
+            response = self.searcher.query(query_request)
             logger.info("✅ Query completed successfully with %d top chunks.",
                         len(response.top_chunks))
             return response
