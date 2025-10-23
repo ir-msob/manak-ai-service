@@ -15,7 +15,7 @@ from src.main.python.ir.msob.manak.ai.document.model.document_query_response imp
 logger = logging.getLogger(__name__)
 
 
-class MultiStageRetriever:
+class DocumentMultiStageRetriever:
     """
     Multi-stage retrieval pipeline:
     1. Embed query

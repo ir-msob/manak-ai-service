@@ -12,7 +12,7 @@ from src.main.python.ir.msob.manak.ai.document.model.document_query_response imp
 from src.main.python.ir.msob.manak.ai.document.model.document_request import DocumentRequest
 from src.main.python.ir.msob.manak.ai.document.document_indexer import DocumentIndexer
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
-from src.main.python.ir.msob.manak.ai.document.document_retriever import MultiStageRetriever
+from src.main.python.ir.msob.manak.ai.document.document_retriever import DocumentMultiStageRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class DocumentService:
     def __init__(self):
         self.indexer = DocumentIndexer()
         self.dms_client = DmsClientConfiguration().get_dms_client()
-        self.searcher: Optional[MultiStageRetriever] = None
+        self.searcher: Optional[DocumentMultiStageRetriever] = None
 
         self._initialize_searcher()
 
@@ -36,7 +36,7 @@ class DocumentService:
     def _initialize_searcher(self):
         """Initialize retriever with safe error handling."""
         try:
-            self.searcher = MultiStageRetriever()
+            self.searcher = DocumentMultiStageRetriever()
             logger.info("✅ MultiStageRetriever initialized successfully.")
         except Exception as e:
             logger.exception("❌ Failed to initialize MultiStageRetriever: %s", e)

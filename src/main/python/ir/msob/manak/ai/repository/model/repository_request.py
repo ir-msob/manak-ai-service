@@ -1,7 +1,6 @@
 from src.main.python.ir.msob.manak.ai.base.request_model import RequestModel
 
 
-class DocumentQueryRequest(RequestModel):
-    query: str
-    top_k: int = 5
-
+class RepositoryRequest(RequestModel):
+    repository_id: str
+    branch: str

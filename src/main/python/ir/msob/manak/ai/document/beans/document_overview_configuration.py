@@ -14,7 +14,7 @@ config = ConfigConfiguration().get_properties()
 
 
 class DocumentOverviewConfiguration:
-    _document_store: MilvusDocumentStore = None
+    _store: MilvusDocumentStore = None
     _writer: DocumentWriter = None
 
     _pipeline: Pipeline = None
@@ -26,14 +26,14 @@ class DocumentOverviewConfiguration:
 
     @classmethod
     def get_store(cls) -> MilvusDocumentStore:
-        if cls._document_store is None:
-            cls._document_store = MilvusDocumentStore(
+        if cls._store is None:
+            cls._store = MilvusDocumentStore(
                 connection_args={"uri": config.milvus.uri},
                 collection_name=config.application.milvus.document.overview.collection_name,
                 drop_old=config.application.milvus.document.overview.drop_old
             )
             logger.info("🔄 Store initialized")
-        return cls._document_store
+        return cls._store
 
     @classmethod
     def get_writer(cls) -> DocumentWriter:

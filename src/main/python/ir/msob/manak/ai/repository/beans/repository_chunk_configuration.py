@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 config = ConfigConfiguration().get_properties()
 
 
-class DocumentChunkConfiguration:
+class RepositoryChunkConfiguration:
     _store: MilvusDocumentStore = None
     _writer: DocumentWriter = None
 
@@ -32,8 +32,8 @@ class DocumentChunkConfiguration:
         if cls._store is None:
             cls._store = MilvusDocumentStore(
                 connection_args={"uri": config.milvus.uri},
-                collection_name=config.application.milvus.document.chunk.collection_name,
-                drop_old=config.application.milvus.document.chunk.drop_old
+                collection_name=config.application.milvus.repository.chunk.collection_name,
+                drop_old=config.application.milvus.repository.chunk.drop_old
             )
             logger.info("🔄 Store initialized")
         return cls._store
@@ -63,9 +63,9 @@ class DocumentChunkConfiguration:
     def get_extractive_summarizer(cls) -> ExtractiveSummarizer:
         if cls._extractive_summarizer is None:
             cls._extractive_summarizer = ExtractiveSummarizer(
-                model_name=config.application.milvus.document.chunk.extractive_summary.model,
-                device=config.application.milvus.document.chunk.extractive_summary.device,
-                max_sentences=config.application.milvus.document.chunk.extractive_summary.max_sentences
+                model_name=config.application.milvus.repository.chunk.extractive_summary.model,
+                device=config.application.milvus.repository.chunk.extractive_summary.device,
+                max_sentences=config.application.milvus.repository.chunk.extractive_summary.max_sentences
             )
             logger.info("🔄 ExtractiveSummarizer initialized")
         return cls._extractive_summarizer
@@ -74,10 +74,10 @@ class DocumentChunkConfiguration:
     def get_abstractive_summarizer(cls) -> AbstractiveSummarizer:
         if cls._abstractive_summarizer is None:
             cls._abstractive_summarizer = AbstractiveSummarizer(
-                model_name=config.application.milvus.document.chunk.abstractive_summary.model,
-                device=config.application.milvus.document.chunk.abstractive_summary.device,
-                max_length=config.application.milvus.document.chunk.abstractive_summary.max_length,
-                min_length=config.application.milvus.document.chunk.abstractive_summary.min_length
+                model_name=config.application.milvus.repository.chunk.abstractive_summary.model,
+                device=config.application.milvus.repository.chunk.abstractive_summary.device,
+                max_length=config.application.milvus.repository.chunk.abstractive_summary.max_length,
+                min_length=config.application.milvus.repository.chunk.abstractive_summary.min_length
             )
             logger.info("🔄 AbstractiveSummarizer initialized")
         return cls._abstractive_summarizer
