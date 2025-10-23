@@ -35,8 +35,8 @@ async def add(dto: DocumentRequest):
         raise HTTPException(status_code=500, detail="Failed to process file")
 
 
-@router.post("/query/text", response_model=DocumentQueryResponse)
-def query_text(query_request: DocumentQueryRequest):
+@router.post("/query", response_model=DocumentQueryResponse)
+def query(query_request: DocumentQueryRequest):
     if not query_request.query:
         raise HTTPException(status_code=400, detail="Empty query")
     try:
