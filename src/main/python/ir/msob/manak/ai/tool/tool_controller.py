@@ -11,7 +11,7 @@ router = APIRouter()
 service = ToolService()
 
 
-@router.post("/invoke", response_model=InvokeResponse)
+@router.post("/tool/invoke", response_model=InvokeResponse)
 def query_text(invoke_request: InvokeRequest):
     if not invoke_request.tool_id:
         raise HTTPException(status_code=400, detail="Empty tool id")

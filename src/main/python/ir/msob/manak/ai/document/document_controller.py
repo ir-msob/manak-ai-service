@@ -19,7 +19,7 @@ def root():
     return {"service": "haystack-milvus-pipeline", "status": "running"}
 
 
-@router.post(response_model=DocumentResponse)
+@router.post(path="/document", response_model=DocumentResponse)
 async def add(dto: DocumentRequest):
     """Index a file from URL."""
     try:
@@ -35,7 +35,7 @@ async def add(dto: DocumentRequest):
         raise HTTPException(status_code=500, detail="Failed to process file")
 
 
-@router.post("/query", response_model=DocumentQueryResponse)
+@router.post("/document/query", response_model=DocumentQueryResponse)
 def query(query_request: DocumentQueryRequest):
     if not query_request.query:
         raise HTTPException(status_code=400, detail="Empty query")

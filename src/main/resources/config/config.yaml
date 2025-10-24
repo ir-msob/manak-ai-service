@@ -11,7 +11,7 @@ python:
     oauth2:
       resource_server:
         jwt:
-          issuer_uri: http://localhost:8080/realms/test-realm
+          issuer_uri: http://localhost:8181/realms/test-realm
       client:
         provider:
           service_client:
@@ -126,3 +126,12 @@ application:
         reranker:
           model: "${models.reranker_model}"
           device: "cpu"
+        abstractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_length: 150
+          min_length: 30
+        extractive_summary:
+          model: "${models.summarization_model}"
+          device: "cpu"
+          max_sentences: 150
