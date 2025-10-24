@@ -33,7 +33,7 @@ class RepositoryIndexer:
         self.chunk_pipeline = RepositoryChunkConfiguration.get_pipeline()
         self.overview_pipeline = RepositoryOverviewConfiguration.get_pipeline()
 
-    def index_repository(self, repository: RepositoryDto, branch: Optional[str], zip_bytes: bytes) -> Dict:
+    def index(self, repository: RepositoryDto, branch: Optional[str], zip_bytes: bytes) -> Dict:
         """
         Main entrypoint. Returns a dict with summary information about indexed files.
         """
@@ -88,7 +88,7 @@ class RepositoryIndexer:
 
         return {
             "repository_id": repository.id,
-            "name": getattr(repository, "name", None),
+            "name": repository.name,
             "indexed_files": indexed_files,
             "overview_id": overview_doc.id
         }

@@ -27,7 +27,6 @@ class RepositoryService:
         self.indexer = RepositoryIndexer()
         self.searcher = RepositoryMultiStageRetriever()
 
-
     async def add(self, dto: RepositoryRequest) -> RepositoryResponse:
         """
         dto should contain repository_id and optionally branch.
@@ -48,16 +47,16 @@ class RepositoryService:
             else:
                 zip_bytes = await self.rms_client.download_branch(dto.repository_id)
 
-            result = self.indexer.index_repository(repository, branch, zip_bytes)
+            result = self.indexer.index(repository, branch, zip_bytes)
 
             # build RepositoryResponse — adapt fields to your actual model if necessary
-            resp = RepositoryResponse(**{
-                "id": result["repository_id"],
-                "name": result.get("name"),
-                "indexed_files": result.get("indexed_files"),
-                "overview_id": result.get("overview_id"),
-                "branch": branch
-            })
+            resp = RepositoryResponse(
+                repository_id=repository.id,
+                name=repository.name,
+                branch=branch,
+                indexed_files=result.get("indexed_files"),
+                overview_id=result.get("overview_id"),
+            )
 
             logger.info("Repository indexed successfully: %s", repository.id)
             return resp

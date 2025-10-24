@@ -11,6 +11,7 @@ class Branch(BaseModel):
     name: str
     description: str
     status: str = "ACTIVE"
+    default_branch: bool
     audit_info: Optional[AuditInfo] = None
 
     class Config:
@@ -50,3 +51,24 @@ class RepositoryDto(BaseModel):
     characteristics: List[Characteristic] = Field(default_factory=list)
     object_validations: List[ObjectValidation] = Field(default_factory=list)
     related_actions: List[RelatedAction] = Field(default_factory=list)
+
+    def get_default_branch(self) -> Optional[Branch]:
+        """
+        Returns the default branch of the repository.
+        First checks the repository-level branches.
+        If not found, checks the specification-level branches.
+        Returns None if no default branch exists.
+        """
+        # 1️⃣ Check repository's own branches
+        for branch in self.branches:
+            if branch.default_branch:
+                return branch
+
+        # 2️⃣ Check specification's branches (if specification exists)
+        if self.specification and self.specification.branches:
+            for branch in self.specification.branches:
+                if branch.default_branch:
+                    return branch
+
+        # 3️⃣ If no default branch found
+        return None

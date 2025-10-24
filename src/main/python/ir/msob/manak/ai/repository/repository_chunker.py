@@ -1,4 +1,3 @@
-import os
 import hashlib
 import logging
 import mimetypes
@@ -10,7 +9,6 @@ from haystack.dataclasses import Document
 from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
 
 logger = logging.getLogger(__name__)
-config = ConfigConfiguration().get_properties()
 
 class RepositoryChunker:
     """
@@ -20,12 +18,10 @@ class RepositoryChunker:
     - Returns a list of haystack.dataclasses.Document with full metadata in .meta.
     """
 
-    def __init__(self,
-                 chunk_size: int = getattr(config.application.milvus.repository.chunk, "chunk_size", 2000),
-                 overlap: int = getattr(config.application.milvus.repository.chunk, "overlap", 200)):
+    def __init__(self):
         # default values chosen conservatively; override via config if present
-        self.chunk_size = chunk_size or 2000
-        self.overlap = overlap or 200
+        self.chunk_size = ConfigConfiguration().get_properties().application.milvus.repository.chunk.chunk_words_size
+        self.overlap = ConfigConfiguration().get_properties().application.milvus.repository.chunk.chunk_overlap
 
     @staticmethod
     def _sha256_bytes(b: bytes) -> str:

@@ -21,13 +21,10 @@ class RepositoryOverviewGenerator:
 
     README_CANDIDATES = ("README.md", "README.MD", "README", "readme.md", "readme")
 
-    def __init__(self,
-                 hierarchical_summarizer=None,
-                 readme_max_chars: int = getattr(config.application.milvus.repository.overview, "readme_max_chars", 20000),
-                 top_files_for_summary: int = getattr(config.application.milvus.repository.overview, "top_files_for_summary", 10)):
-        self.hierarchical_summarizer = hierarchical_summarizer or RepositoryOverviewConfiguration.get_hierarchical_summarizer()
-        self.readme_max_chars = readme_max_chars
-        self.top_files_for_summary = top_files_for_summary
+    def __init__(self):
+        self.hierarchical_summarizer = RepositoryOverviewConfiguration.get_hierarchical_summarizer()
+        self.readme_max_chars = 20000
+        self.top_files_for_summary = 10
 
     def build_overview(self, repo_id: str, branch: Optional[str], file_map: Dict[str, bytes]) -> Document:
         """
