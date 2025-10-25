@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import uvicorn
 from fastapi import FastAPI
@@ -12,9 +13,15 @@ from src.main.python.ir.msob.manak.ai.tool import tool_controller
 def setup_logging() -> None:
     """Configure global logging settings."""
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,  # Show all logs: DEBUG and above
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        stream=sys.stdout,
     )
+
+    # Ensure Uvicorn logs also show DEBUG messages
+    uvicorn_loggers = ["uvicorn", "uvicorn.error", "uvicorn.access"]
+    for name in uvicorn_loggers:
+        logging.getLogger(name).setLevel(logging.DEBUG)
 
 
 def create_app() -> FastAPI:
@@ -27,11 +34,10 @@ def create_app() -> FastAPI:
 
     # 🔹 Register routes
     app.include_router(document_controller.router, prefix="/api/v1", tags=["Documents"])
-    app.include_router(repository_controller.router, prefix="/api/v1", tags=["Documents"])
+    app.include_router(repository_controller.router, prefix="/api/v1", tags=["Repository"])
     app.include_router(tool_controller.router, prefix="/api/v1", tags=["Tool"])
 
     logging.getLogger("Application").info(f"✅ Application '{app.title}' initialized successfully.")
-
     return app
 
 
@@ -43,7 +49,14 @@ def main() -> None:
     setup_logging()
     port = ConfigConfiguration().get_properties().server.port
     logging.getLogger("Application").info(f"🚀 Starting AI service on port {port} ...")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        reload=False,
+        log_level="debug",  # Ensure Uvicorn logs all messages
+    )
 
 
 if __name__ == "__main__":

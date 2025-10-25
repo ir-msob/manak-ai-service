@@ -1,21 +1,19 @@
 import logging
 from typing import List, Set, Optional
-
 from haystack.dataclasses import Document
 from pydantic import ValidationError
-
 from src.main.python.ir.msob.manak.ai.beans.embedder_configuration import EmbedderConfiguration
 from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
-from src.main.python.ir.msob.manak.ai.repository.beans.repository_chunk_configuration import RepositoryChunkConfiguration
-from src.main.python.ir.msob.manak.ai.repository.beans.repository_overview_configuration import RepositoryOverviewConfiguration
-from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
-from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
+from src.main.python.ir.msob.manak.ai.repository.beans.repository_chunk_configuration import \
+    RepositoryChunkConfiguration
+from src.main.python.ir.msob.manak.ai.repository.beans.repository_overview_configuration import \
+    RepositoryOverviewConfiguration
+from src.main.python.ir.msob.manak.ai.repository.model.repository_chunk_response import RepositoryChunkResponse
+from src.main.python.ir.msob.manak.ai.repository.model.repository_overview_response import RepositoryOverviewResponse
 from src.main.python.ir.msob.manak.ai.repository.model.repository_query_request import RepositoryQueryRequest
 from src.main.python.ir.msob.manak.ai.repository.model.repository_query_response import RepositoryQueryResponse
-from src.main.python.ir.msob.manak.ai.repository.model.repository_response import RepositoryResponse
 
 logger = logging.getLogger(__name__)
-
 
 class RepositoryMultiStageRetriever:
     """
@@ -41,7 +39,7 @@ class RepositoryMultiStageRetriever:
 
     # ---------------- Public API ----------------
 
-    def query(self, request: RepositoryQueryRequest) -> RepositoryQueryResponse:
+    def overview_query(self, request: RepositoryQueryRequest) -> RepositoryOverviewResponse:
         """
         request must provide:
           - query: str
@@ -54,30 +52,43 @@ class RepositoryMultiStageRetriever:
         try:
             query_emb = self._embed_query(request.query)
 
-            overviews = self._search_overviews(query_emb, request.top_k, getattr(request, "repository_id", None))
+            overviews = self._search_overviews(request.repository_ids, query_emb, request.top_k)
             if not overviews:
                 logger.warning("No repository overviews found for query.")
-                return self._empty_response(request)
+                return self._empty_overview_response(request)
 
-            # collect repository ids from overview meta (fallback to overview.id)
-            repo_ids = self._collect_repo_ids(overviews)
-            if not repo_ids:
-                logger.warning("No repository ids discovered from overviews.")
-                return self._empty_response(request)
+            return self._build_overview_response(request, overviews)
 
-            all_chunks = self._retrieve_chunks(repo_ids, query_emb, request.top_k)
+        except Exception as e:
+            logger.exception("Repository retrieval pipeline failed: %s", e)
+            raise
+
+    def chunk_query(self, request: RepositoryQueryRequest) -> RepositoryChunkResponse:
+        """
+        request must provide:
+          - query: str
+          - top_k: int
+          - repository_id: Optional[str] (if provided, results limited to that repo)
+        """
+        logger.info("🔍 Repository multi-stage retrieval started for query='%s' repo='%s'",
+                    request.query, request.repository_ids)
+
+        try:
+            query_emb = self._embed_query(request.query)
+
+            all_chunks = self._retrieve_chunks(request.repository_ids, query_emb, request.top_k)
             if not all_chunks:
-                logger.warning("No chunks retrieved for repositories: %s", repo_ids)
-                return self._empty_response(request)
+                logger.warning("No chunks retrieved for repositories: %s", request.repository_ids)
+                return self._empty_chunk_response(request)
 
             reranked = self._rerank(request.query, all_chunks)
             if not reranked:
                 logger.warning("Reranking returned no candidates.")
-                return self._empty_response(request)
+                return self._empty_chunk_response(request)
 
             summary = self._summarize(reranked)
 
-            return self._build_response(request, overviews, reranked, summary)
+            return self._build_chunk_response(request, reranked, summary)
 
         except Exception as e:
             logger.exception("Repository retrieval pipeline failed: %s", e)
@@ -93,25 +104,25 @@ class RepositoryMultiStageRetriever:
         logger.debug("Query embedding ready.")
         return emb
 
-    def _search_overviews(self, query_emb, top_k: int, repository_id: Optional[str]) -> List[Document]:
+    def _search_overviews(self, repository_ids: Optional[set[str]], query_emb, top_k: int) -> List[Document]:
         """
         Search overview collection. If repository_id provided, include it in filters.
         """
-        logger.debug("Searching repository overviews (top_k=%d) repo_id=%s", top_k, repository_id)
+        logger.debug("Searching repository overviews (top_k=%d) repo_id=%s", top_k, repository_ids)
 
         # Build filters: always require type == overview
-        if repository_id:
+        if repository_ids is None:
+            # only overview type
+            self.overview_retriever.filters = {"field": "type", "operator": "in", "value": ["overview"]}
+        else:
             # AND both conditions
             self.overview_retriever.filters = {
                 "operator": "AND",
                 "conditions": [
                     {"field": "type", "operator": "in", "value": ["overview"]},
-                    {"field": "repository_id", "operator": "in", "value": [repository_id]}
+                    {"field": "repository_id", "operator": "in", "value": [repository_ids]}
                 ]
             }
-        else:
-            # only overview type
-            self.overview_retriever.filters = {"field": "type", "operator": "in", "value": ["overview"]}
 
         res = self.overview_retriever.run(query_embedding=query_emb, top_k=top_k)
         docs = res.get("documents", [])
@@ -133,25 +144,27 @@ class RepositoryMultiStageRetriever:
         logger.debug("Collected repository ids from overviews: %s", ids)
         return ids
 
-    def _retrieve_chunks(self, repo_ids: Set[str], query_emb, top_k: int) -> List[Document]:
+    def _retrieve_chunks(self, repo_ids: Optional[set[str]] , query_emb, top_k: int) -> List[Document]:
         """
         Retrieve chunks for the set of repository ids.
         We run the chunk_retriever once per repo_id and aggregate results.
         """
         all_chunks = []
         logger.debug("Retrieving chunks for repo_ids=%s (top_k=%d)", repo_ids, top_k)
-        for rid in repo_ids:
+        if  repo_ids is None:
+            self.chunk_retriever.filters = {"field": "type", "operator": "in", "value": ["chunk"]}
+        else:
             self.chunk_retriever.filters = {
                 "operator": "AND",
                 "conditions": [
-                    {"field": "repository_id", "operator": "in", "value": [rid]},
+                    {"field": "repository_id", "operator": "in", "value": [repo_ids]},
                     {"field": "type", "operator": "in", "value": ["chunk"]}
                 ]
             }
-            res = self.chunk_retriever.run(query_embedding=query_emb, top_k=top_k)
-            docs = res.get("documents", [])
-            logger.debug("Retrieved %d chunks for repo %s", len(docs), rid)
-            all_chunks.extend(docs)
+        res = self.chunk_retriever.run(query_embedding=query_emb, top_k=top_k)
+        docs = res.get("documents", [])
+        logger.debug("Retrieved %d chunks for repo %s", len(docs), repo_ids)
+        all_chunks.extend(docs)
 
         # deduplicate by id preserving last seen
         unique = {}
@@ -211,19 +224,17 @@ class RepositoryMultiStageRetriever:
 
     # ---------------- Response Builders ----------------
 
-    def _build_response(self, request: RepositoryQueryRequest, overviews: List[Document], chunks: List[Document],
-                        summary: str) -> RepositoryQueryResponse:
+    def _build_overview_response(self, request: RepositoryQueryRequest, overviews: List[Document]) -> RepositoryOverviewResponse:
         """
         Build RepositoryQueryResponse using RepositoryResponse as element model.
         Map haystack.Document -> RepositoryResponse (document-level fields + repo metadata where available).
         Skip documents that raise validation errors and log them.
         """
-        overviews_res: List[RepositoryResponse] = []
-        chunks_res: List[RepositoryResponse] = []
+        overviews_res: List[RepositoryQueryResponse] = []
         repo_ids = []
 
         # Helper to map a haystack Document to RepositoryResponse
-        def map_doc_to_repo_response(doc: Document, kind: str) -> RepositoryResponse:
+        def map_doc_to_repo_response(doc: Document, kind: str) -> RepositoryQueryResponse:
             meta = getattr(doc, "meta", {}) or {}
             # try to extract common chunk fields
             file_path = meta.get("file_path") or meta.get("path") or None
@@ -247,7 +258,7 @@ class RepositoryMultiStageRetriever:
                 "total_chunks": total_chunks,
                 "type": kind,
             }
-            return RepositoryResponse(**payload)
+            return RepositoryQueryResponse(**payload)
 
         # Convert overviews
         for o in overviews:
@@ -267,6 +278,51 @@ class RepositoryMultiStageRetriever:
             except Exception as e:
                 logger.exception("Unexpected error mapping overview doc_id=%s: %s", getattr(o, "id", None), e)
 
+        resp = RepositoryOverviewResponse(
+            repository_ids=request.repository_ids,
+            query=request.query,
+            top_k=request.top_k,
+            overviews=overviews_res,
+        )
+        return resp
+
+    def _build_chunk_response(self, request: RepositoryQueryRequest, chunks: List[Document],
+                                 summary: str) -> RepositoryChunkResponse:
+        """
+        Build RepositoryQueryResponse using RepositoryResponse as element model.
+        Map haystack.Document -> RepositoryResponse (document-level fields + repo metadata where available).
+        Skip documents that raise validation errors and log them.
+        """
+        chunks_res: List[RepositoryQueryResponse] = []
+        repo_ids = []
+
+        # Helper to map a haystack Document to RepositoryResponse
+        def map_doc_to_repo_response(doc: Document, kind: str) -> RepositoryQueryResponse:
+            meta = getattr(doc, "meta", {}) or {}
+            # try to extract common chunk fields
+            file_path = meta.get("file_path") or meta.get("path") or None
+            file_name = meta.get("file_name") or (file_path and file_path.split("/")[-1]) or None
+            chunk_idx = meta.get("chunk_index")
+            total_chunks = meta.get("total_chunks")
+
+            payload = {
+                # repo-level possibly present in meta
+                "repository_id": meta.get("repository_id"),
+                "branch": meta.get("branch"),
+                "overview_id": meta.get("overview_id"),
+                # document-level
+                "document_id": getattr(doc, "id", None),
+                "content": getattr(doc, "content", None),
+                "meta": meta,
+                "score": getattr(doc, "score", None),
+                "file_path": file_path,
+                "file_name": file_name,
+                "chunk_index": chunk_idx,
+                "total_chunks": total_chunks,
+                "type": kind,
+            }
+            return RepositoryQueryResponse(**payload)
+
         # Convert chunks
         for d in chunks:
             try:
@@ -277,34 +333,28 @@ class RepositoryMultiStageRetriever:
             except Exception as e:
                 logger.exception("Unexpected error mapping chunk doc_id=%s: %s", getattr(d, "id", None), e)
 
-        # dedupe repo_ids while preserving order
-        seen = set()
-        unique_repo_ids = []
-        for r in repo_ids:
-            if r and r not in seen:
-                seen.add(r)
-                unique_repo_ids.append(r)
-
-        # choose input_overview as first overview content (if any)
-        input_overview_text = None
-        if overviews_res:
-            input_overview_text = overviews_res[0].content
-
-        resp = RepositoryQueryResponse(
+        resp = RepositoryChunkResponse(
+            repository_ids=request.repository_ids,
             query=request.query,
             top_k=request.top_k,
-            input_overview=input_overview_text,
-            overviews=overviews_res,
             top_chunks=chunks_res,
             final_summary=summary,
-            repo_ids=unique_repo_ids
         )
         return resp
-    def _empty_response(self, request: RepositoryQueryRequest) -> RepositoryQueryResponse:
-        return RepositoryQueryResponse(**{
-            "query": request.query,
-            "top_k": request.top_k,
-            "overviews": [],
-            "top_chunks": [],
-            "final_summary": ""
-        })
+
+    def _empty_chunk_response(self, request: RepositoryQueryRequest) -> RepositoryChunkResponse:
+        return RepositoryChunkResponse(
+            repository_ids=request.repository_ids,
+            query=request.query,
+            top_k=request.top_k,
+            top_chunks=[],
+            final_summary="",
+        )
+
+    def _empty_overview_response(self, request: RepositoryQueryRequest) -> RepositoryOverviewResponse:
+        return  RepositoryOverviewResponse(
+            repository_ids=request.repository_ids,
+            query=request.query,
+            top_k=request.top_k,
+            overviews=[],
+        )

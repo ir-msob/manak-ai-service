@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from haystack.dataclasses import Document
 
@@ -8,9 +8,11 @@ from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigC
 from src.main.python.ir.msob.manak.ai.document.beans.document_chunk_configuration import DocumentChunkConfiguration
 from src.main.python.ir.msob.manak.ai.document.beans.document_overview_configuration import \
     DocumentOverviewConfiguration
+from src.main.python.ir.msob.manak.ai.document.model.document_chunk_response import DocumentChunkResponse
+from src.main.python.ir.msob.manak.ai.document.model.document_overview_response import DocumentOverviewResponse
+from src.main.python.ir.msob.manak.ai.document.model.document_query_response import DocumentQueryResponse
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
 from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
-from src.main.python.ir.msob.manak.ai.document.model.document_query_response import DocumentQueryResponse
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +20,11 @@ logger = logging.getLogger(__name__)
 class DocumentMultiStageRetriever:
     """
     Multi-stage retrieval pipeline:
-    1. Embed query
-    2. Search document overviews
-    3. Retrieve relevant chunks per overview
-    4. Rerank results using cross-encoder
-    5. Summarize top-ranked content
+    1️⃣ Embed query
+    2️⃣ Search document overviews
+    3️⃣ Retrieve relevant chunks per overview
+    4️⃣ Rerank chunks using CrossEncoder
+    5️⃣ Summarize top-ranked content
     """
 
     def __init__(self):
@@ -35,127 +37,169 @@ class DocumentMultiStageRetriever:
 
     # ------------------------ Public API ------------------------
 
-    def query(self, query_request: DocumentQueryRequest) -> DocumentQueryResponse:
-        """Runs the full multi-stage retrieval pipeline."""
-        logger.info(f"🔍 Starting multi-stage retrieval for query: '{query_request.query}'")
+    def overview_query(self, query_request: DocumentQueryRequest) -> DocumentOverviewResponse:
+        """Run multi-stage overview retrieval."""
+        logger.info(f"🔍 Overview query started: '{query_request.query}'")
 
         try:
             query_emb = self._embed_query(query_request.query)
+            overviews = self._search_overviews(query_request.document_ids, query_emb, query_request.top_k)
 
-            overviews = self._search_overviews(query_emb, query_request.top_k)
             if not overviews:
-                logger.warning("No overviews retrieved for query.")
-                return self._empty_response(query_request)
+                logger.warning("⚠️ No overviews retrieved for query.")
+                return self._empty_overview_response(query_request)
 
-            doc_ids = {o.meta.get("doc_id") for o in overviews if o.meta.get("doc_id")}
-            if not doc_ids:
-                logger.warning("No document IDs found in overviews.")
-                return self._empty_response(query_request)
+            return self._build_overview_response(query_request, overviews)
 
-            all_chunks = self._retrieve_chunks(doc_ids, query_emb, query_request.top_k)
+        except Exception as e:
+            logger.exception(f"❌ Overview retrieval pipeline failed: {e}")
+            raise
+
+    def chunk_query(self, query_request: DocumentQueryRequest) -> DocumentChunkResponse:
+        """Run multi-stage chunk retrieval and summarization."""
+        logger.info(f"🔍 Chunk query started: '{query_request.query}'")
+
+        try:
+            query_emb = self._embed_query(query_request.query)
+            all_chunks = self._retrieve_chunks(query_request.document_ids, query_emb, query_request.top_k)
+
             if not all_chunks:
-                logger.warning("No chunks retrieved for matching documents.")
-                return self._empty_response(query_request)
+                logger.warning("⚠️ No chunks retrieved for matching documents.")
+                return self._empty_chunk_response(query_request)
 
             reranked_chunks = self._rerank(query_request.query, all_chunks)
             if not reranked_chunks:
-                logger.warning("No reranked chunks found.")
-                return self._empty_response(query_request)
+                logger.warning("⚠️ No chunks after reranking.")
+                return self._empty_chunk_response(query_request)
 
             summary = self._summarize(reranked_chunks)
-
-            return self._build_response(query_request, overviews, reranked_chunks, summary)
+            return self._build_chunk_response(query_request, reranked_chunks, summary)
 
         except Exception as e:
-            logger.exception(f"❌ Retrieval pipeline failed: {e}")
+            logger.exception(f"❌ Chunk retrieval pipeline failed: {e}")
             raise
 
     # ------------------------ Internal Steps ------------------------
 
     def _embed_query(self, query: str):
-        """Generate query embedding using the same embedder as documents."""
-        logger.debug("Embedding query text...")
+        """Generate embedding for the query text."""
+        logger.debug("🟢 Embedding query...")
         query_doc = Document(content=query)
         result = self.embedder.run(documents=[query_doc])
         emb = result["documents"][0].embedding
-        logger.debug("Query embedding created successfully.")
+        logger.debug("✅ Query embedding created.")
         return emb
 
-    def _search_overviews(self, query_emb, top_k: int) -> List[Document]:
-        """Retrieve top overview documents."""
-        logger.debug("Searching document overviews...")
-        self.overview_retriever.filters = {"field": "type", "operator": "in", "value": ["overview"]}
+    def _search_overviews(self, doc_ids: Optional[set[str]], query_emb, top_k: int) -> List[Document]:
+        """Retrieve top overview documents based on query embedding."""
+        logger.debug("🟢 Searching document overviews...")
+
+        if doc_ids is None:
+            self.overview_retriever.filters = {"field": "type", "operator": "in", "value": ["overview"]}
+        else:
+            self.overview_retriever.filters = {
+                "operator": "AND",
+                "conditions": [
+                    {"field": "doc_id", "operator": "in", "value": [doc_ids]},
+                    {"field": "type", "operator": "in", "value": ["overview"]},
+                ],
+            }
+
         result = self.overview_retriever.run(query_embedding=query_emb, top_k=top_k)
         docs = result.get("documents", [])
-        logger.info(f"Found {len(docs)} overview(s).")
+        logger.info(f"✅ Found {len(docs)} overview(s).")
         return docs
 
-    def _retrieve_chunks(self, doc_ids: set, query_emb, top_k: int) -> List[Document]:
-        """Retrieve chunks belonging to the overview document IDs."""
+    def _retrieve_chunks(self, doc_ids: Optional[set[str]], query_emb, top_k: int) -> List[Document]:
+        """Retrieve all chunks for given document IDs."""
+
         all_chunks = []
-        logger.debug(f"Retrieving chunks for {len(doc_ids)} documents...")
-        for doc_id in doc_ids:
+
+        if  doc_ids is None:
+            self.chunk_retriever.filters = {"field": "type", "operator": "in", "value": ["chunk"]}
+        else:
             self.chunk_retriever.filters = {
                 "operator": "AND",
                 "conditions": [
-                    {"field": "doc_id", "operator": "in", "value": [doc_id]},
+                    {"field": "doc_id", "operator": "in", "value": [doc_ids]},
                     {"field": "type", "operator": "in", "value": ["chunk"]},
                 ],
             }
-            result = self.chunk_retriever.run(query_embedding=query_emb, top_k=top_k)
-            docs = result.get("documents", [])
-            all_chunks.extend(docs)
-        logger.info(f"Retrieved {len(all_chunks)} total chunks.")
-        return list({d.id: d for d in all_chunks}.values())  # dedup by id
+        result = self.chunk_retriever.run(query_embedding=query_emb, top_k=top_k)
+        docs = result.get("documents", [])
+        all_chunks.extend(docs)
+
+        unique_chunks = list({d.id: d for d in all_chunks}.values())  # deduplicate by id
+        logger.info(f"✅ Retrieved {len(unique_chunks)} unique chunks.")
+        return unique_chunks
 
     def _rerank(self, query: str, docs: List[Document]) -> List[Document]:
-        """Rerank using CrossEncoder model."""
+        """Rerank candidate chunks using CrossEncoder."""
         if not docs:
             return []
-        logger.debug("Reranking candidate chunks...")
+
+        logger.debug("🟢 Reranking candidate chunks...")
         pairs = [(query, d.content[:512]) for d in docs if d.content]
         scores = self.cross_encoder.predict(pairs)
         ranked = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)
-        reranked = [d for d, _ in ranked[:min(self.config.application.milvus.document.chunk.retriever.rerank_top_k, len(ranked))]]
-        logger.info(f"Selected top {len(reranked)} chunks after reranking.")
+        top_k = self.config.application.milvus.document.chunk.retriever.rerank_top_k
+        reranked = [d for d, _ in ranked[:min(top_k, len(ranked))]]
+        logger.info(f"✅ Selected top {len(reranked)} chunks after reranking.")
         return reranked
 
     def _summarize(self, docs: List[Document]) -> str:
-        """Summarize the top reranked chunks into a single overview."""
+        """Summarize top-ranked chunks into a final overview."""
         if not docs:
             return ""
-        logger.debug("Summarizing top-ranked chunks...")
+        logger.debug("🟢 Summarizing top-ranked chunks...")
         text = "\n\n".join(d.content for d in docs if d.content)
         summary = self.hybrid_summarizer.summarize(text)
-        logger.info(f"Summary generated with length: {len(summary)} chars.")
+        logger.info(f"✅ Summary generated (length: {len(summary)} chars).")
         return summary
 
     # ------------------------ Response Builders ------------------------
 
     @staticmethod
-    def _build_response(request: DocumentQueryRequest,
-                        overviews: List[Document],
-                        chunks: List[Document],
-                        summary: str) -> DocumentQueryResponse:
-        """Builds the structured response object."""
-        overviews_res = [DocumentResponse(id=o.id, content=o.content, meta=o.meta) for o in overviews]
-        chunks_res = [DocumentResponse(id=d.id, content=d.content, meta=d.meta) for d in chunks]
-
-        return DocumentQueryResponse(
+    def _build_overview_response(request: DocumentQueryRequest, overviews: List[Document]) -> DocumentOverviewResponse:
+        """Build response object containing document overviews."""
+        overviews_res = [DocumentQueryResponse(id=o.id, content=o.content, meta=o.meta) for o in overviews]
+        return DocumentOverviewResponse(
+            document_ids=request.document_ids,
             query=request.query,
             top_k=request.top_k,
             overviews=overviews_res,
+        )
+
+    @staticmethod
+    def _build_chunk_response(request: DocumentQueryRequest, chunks: List[Document],
+                              summary: str) -> DocumentChunkResponse:
+        """Build response object containing top chunks and final summary."""
+        chunks_res = [DocumentQueryResponse(id=d.id, content=d.content, meta=d.meta) for d in chunks]
+        return DocumentChunkResponse(
+            document_ids=request.document_ids,
+            query=request.query,
+            top_k=request.top_k,
             top_chunks=chunks_res,
             final_summary=summary,
         )
 
     @staticmethod
-    def _empty_response(request: DocumentQueryRequest) -> DocumentQueryResponse:
-        """Return an empty but valid response if no results found."""
-        return DocumentQueryResponse(
+    def _empty_overview_response(request: DocumentQueryRequest) -> DocumentOverviewResponse:
+        """Return an empty response for overview queries if no results found."""
+        return DocumentOverviewResponse(
+            document_ids=request.document_ids,
             query=request.query,
             top_k=request.top_k,
-            overviews=[],
+            overviews=[]
+        )
+
+    @staticmethod
+    def _empty_chunk_response(request: DocumentQueryRequest) -> DocumentChunkResponse:
+        """Return an empty response for chunk queries if no results found."""
+        return DocumentChunkResponse(
+            document_ids=request.document_ids,
+            query=request.query,
+            top_k=request.top_k,
             top_chunks=[],
-            final_summary="",
+            final_summary=""
         )

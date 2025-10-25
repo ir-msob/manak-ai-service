@@ -3,9 +3,9 @@ import logging
 from src.main.python.ir.msob.manak.ai.client.rms.repository_dto import RepositoryDto
 from src.main.python.ir.msob.manak.ai.client.rms.rms_client_configuration import RmsClientConfiguration
 from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
-from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
+from src.main.python.ir.msob.manak.ai.repository.model.repository_chunk_response import RepositoryChunkResponse
+from src.main.python.ir.msob.manak.ai.repository.model.repository_overview_response import RepositoryOverviewResponse
 from src.main.python.ir.msob.manak.ai.repository.model.repository_query_request import RepositoryQueryRequest
-from src.main.python.ir.msob.manak.ai.repository.model.repository_query_response import RepositoryQueryResponse
 from src.main.python.ir.msob.manak.ai.repository.model.repository_request import RepositoryRequest
 from src.main.python.ir.msob.manak.ai.repository.model.repository_response import RepositoryResponse
 from src.main.python.ir.msob.manak.ai.repository.repository_indexer import RepositoryIndexer
@@ -17,9 +17,9 @@ config = ConfigConfiguration().get_properties()
 
 class RepositoryService:
     """
-    High-level service used by your API/controllers.
-    - add(repository_request): download branch zip, index repository using RepositoryIndexer.
-    - query(repository_query_request): delegated to MultiStageRetriever but filters can be applied to restrict to a repo.
+    High-level service responsible for:
+      - Indexing repositories
+      - Performing overview & chunk queries
     """
 
     def __init__(self):
@@ -29,27 +29,21 @@ class RepositoryService:
 
     async def add(self, dto: RepositoryRequest) -> RepositoryResponse:
         """
-        dto should contain repository_id and optionally branch.
-        Behavior:
-          - download branch (zip) via rms client
-          - index with RepositoryIndexer
-          - return RepositoryResponse (contains indexed_files list and overview id)
+        Indexes a repository by downloading its branch and processing it.
         """
-        logger.info("Repository add requested: %s", getattr(dto, "repository_id", "<none>"))
-
+        logger.info("📦 Indexing repository: %s (branch=%s)", dto.repository_id, getattr(dto, "branch", None))
         try:
             repository: RepositoryDto = await self.rms_client.get_repository(dto.repository_id)
             branch = dto.branch
 
-            # download zip; adapt call if your client requires branch param
-            if branch:
-                zip_bytes = await self.rms_client.download_branch(dto.repository_id, branch)
-            else:
-                zip_bytes = await self.rms_client.download_branch(dto.repository_id)
+            # Download zip file
+            zip_bytes = await self.rms_client.download_branch(dto.repository_id, branch) if branch \
+                else await self.rms_client.download_branch(dto.repository_id)
 
+            # Index repository contents
             result = self.indexer.index(repository, branch, zip_bytes)
 
-            # build RepositoryResponse — adapt fields to your actual model if necessary
+            # Build response
             resp = RepositoryResponse(
                 repository_id=repository.id,
                 name=repository.name,
@@ -58,34 +52,35 @@ class RepositoryService:
                 overview_id=result.get("overview_id"),
             )
 
-            logger.info("Repository indexed successfully: %s", repository.id)
+            logger.info("✅ Repository indexed successfully: %s", repository.id)
             return resp
 
         except Exception as e:
-            logger.exception("Failed to add/index repository %s: %s", getattr(dto, "repository_id", "<unknown>"), e)
+            logger.exception("❌ Failed to index repository %s: %s", getattr(dto, "repository_id", "<unknown>"), e)
             raise RuntimeError(f"Repository add failed: {e}") from e
 
-    def query(self, query_request: RepositoryQueryRequest) -> RepositoryQueryResponse:
+    def overview_query(self, query_request: RepositoryQueryRequest) -> RepositoryOverviewResponse:
         """
-        Query across indexed repository data.
-
-        Important fix:
-          - Do NOT apply repository-level filters on retrievers here.
-          - We must let the multi-stage retriever first search OVERVIEWS (by the query),
-            collect repository_ids from those overviews, and only then filter chunks by repo_id.
-          - To enforce that, we pass a copy of the request without repository_id to searcher.query.
+        Performs an overview-level semantic search.
         """
-        if not self.searcher:
-            logger.error("Searcher not available for repository query.")
-            raise RuntimeError("Searcher not initialized")
-
+        logger.info("🔍 Starting overview query for: '%s'", query_request.query)
         try:
-            response = self.searcher.query(query_request)
-
-            # map to RepositoryQueryResponse — adapt to your actual model
+            response = self.searcher.overview_query(query_request)
+            logger.info("✅ Overview query completed successfully.")
             return response
-
         except Exception as e:
-            logger.exception("Repository query failed: %s", e)
-            raise RuntimeError(f"Repository query failed: {e}") from e
+            logger.exception("❌ Overview query failed: %s", e)
+            raise RuntimeError(f"Overview query failed: {e}") from e
 
+    def chunk_query(self, query_request: RepositoryQueryRequest) -> RepositoryChunkResponse:
+        """
+        Performs a chunk-level semantic search and generates a summary.
+        """
+        logger.info("🔍 Starting chunk query for: '%s'", query_request.query)
+        try:
+            response = self.searcher.chunk_query(query_request)
+            logger.info("✅ Chunk query completed successfully.")
+            return response
+        except Exception as e:
+            logger.exception("❌ Chunk query failed: %s", e)
+            raise RuntimeError(f"Chunk query failed: {e}") from e
