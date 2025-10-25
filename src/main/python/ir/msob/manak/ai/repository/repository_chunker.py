@@ -79,6 +79,7 @@ class RepositoryChunker:
                 "sha256": sha,
                 "chunk_index": idx,
                 "total_chunks": total_chunks,
+                "type": "chunk",
             }
             doc_id = f"{repo_id}:{path}:chunk:{idx}"
             doc = Document(id=doc_id, content=content, meta=meta)

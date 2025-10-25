@@ -2,6 +2,7 @@ import logging
 from typing import List, Set, Optional
 
 from haystack.dataclasses import Document
+from pydantic import ValidationError
 
 from src.main.python.ir.msob.manak.ai.beans.embedder_configuration import EmbedderConfiguration
 from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
@@ -11,6 +12,7 @@ from src.main.python.ir.msob.manak.ai.document.model.document_response import Do
 from src.main.python.ir.msob.manak.ai.document.model.document_query_request import DocumentQueryRequest
 from src.main.python.ir.msob.manak.ai.repository.model.repository_query_request import RepositoryQueryRequest
 from src.main.python.ir.msob.manak.ai.repository.model.repository_query_response import RepositoryQueryResponse
+from src.main.python.ir.msob.manak.ai.repository.model.repository_response import RepositoryResponse
 
 logger = logging.getLogger(__name__)
 
@@ -209,23 +211,95 @@ class RepositoryMultiStageRetriever:
 
     # ---------------- Response Builders ----------------
 
-    def _build_response(self, request: RepositoryQueryRequest, overviews: List[Document], chunks: List[Document], summary: str) -> RepositoryQueryResponse:
+    def _build_response(self, request: RepositoryQueryRequest, overviews: List[Document], chunks: List[Document],
+                        summary: str) -> RepositoryQueryResponse:
         """
-        Map haystack Documents to DocumentResponse and build RepositoryQueryResponse.
-        Adjust mapping if your RepositoryQueryResponse has different fields.
+        Build RepositoryQueryResponse using RepositoryResponse as element model.
+        Map haystack.Document -> RepositoryResponse (document-level fields + repo metadata where available).
+        Skip documents that raise validation errors and log them.
         """
-        overviews_res: List[DocumentResponse] = [DocumentResponse(id=o.id, content=o.content, meta=o.meta) for o in overviews]
-        chunks_res: List[DocumentResponse] = [DocumentResponse(id=d.id, content=d.content, meta=d.meta) for d in chunks]
+        overviews_res: List[RepositoryResponse] = []
+        chunks_res: List[RepositoryResponse] = []
+        repo_ids = []
 
-        resp = RepositoryQueryResponse(**{
-            "query": request.query,
-            "top_k": request.top_k,
-            "overviews": overviews_res,
-            "top_chunks": chunks_res,
-            "final_summary": summary
-        })
+        # Helper to map a haystack Document to RepositoryResponse
+        def map_doc_to_repo_response(doc: Document, kind: str) -> RepositoryResponse:
+            meta = getattr(doc, "meta", {}) or {}
+            # try to extract common chunk fields
+            file_path = meta.get("file_path") or meta.get("path") or None
+            file_name = meta.get("file_name") or (file_path and file_path.split("/")[-1]) or None
+            chunk_idx = meta.get("chunk_index")
+            total_chunks = meta.get("total_chunks")
+
+            payload = {
+                # repo-level possibly present in meta
+                "repository_id": meta.get("repository_id"),
+                "branch": meta.get("branch"),
+                "overview_id": meta.get("overview_id"),
+                # document-level
+                "document_id": getattr(doc, "id", None),
+                "content": getattr(doc, "content", None),
+                "meta": meta,
+                "score": getattr(doc, "score", None),
+                "file_path": file_path,
+                "file_name": file_name,
+                "chunk_index": chunk_idx,
+                "total_chunks": total_chunks,
+                "type": kind,
+            }
+            return RepositoryResponse(**payload)
+
+        # Convert overviews
+        for o in overviews:
+            try:
+                rr = map_doc_to_repo_response(o, kind="overview")
+                # collect repo id
+                if rr.repository_id:
+                    repo_ids.append(rr.repository_id)
+                else:
+                    # fallback: parse document_id like "<repo>_overview"
+                    did = rr.document_id
+                    if isinstance(did, str) and did.endswith("_overview"):
+                        repo_ids.append(did.replace("_overview", ""))
+                overviews_res.append(rr)
+            except ValidationError as ve:
+                logger.exception("Skipping overview due validation error: %s doc_id=%s", ve, getattr(o, "id", None))
+            except Exception as e:
+                logger.exception("Unexpected error mapping overview doc_id=%s: %s", getattr(o, "id", None), e)
+
+        # Convert chunks
+        for d in chunks:
+            try:
+                rr = map_doc_to_repo_response(d, kind="chunk")
+                chunks_res.append(rr)
+            except ValidationError as ve:
+                logger.exception("Skipping chunk due validation error: %s doc_id=%s", ve, getattr(d, "id", None))
+            except Exception as e:
+                logger.exception("Unexpected error mapping chunk doc_id=%s: %s", getattr(d, "id", None), e)
+
+        # dedupe repo_ids while preserving order
+        seen = set()
+        unique_repo_ids = []
+        for r in repo_ids:
+            if r and r not in seen:
+                seen.add(r)
+                unique_repo_ids.append(r)
+
+        # choose input_overview as first overview content (if any)
+        input_overview_text = None
+        if overviews_res:
+            input_overview_text = overviews_res[0].content
+
+        resp = RepositoryQueryResponse(
+            query=request.query,
+            top_k=request.top_k,
+            input_overview=input_overview_text,
+            overviews=overviews_res,
+            top_chunks=chunks_res,
+            final_summary=summary,
+            repo_ids=unique_repo_ids
+        )
         return resp
-
     def _empty_response(self, request: RepositoryQueryRequest) -> RepositoryQueryResponse:
         return RepositoryQueryResponse(**{
             "query": request.query,

@@ -68,27 +68,18 @@ class RepositoryService:
     def query(self, query_request: RepositoryQueryRequest) -> RepositoryQueryResponse:
         """
         Query across indexed repository data.
-        By default calls MultiStageRetriever; if query_request includes repository_id, we add a filter to retriever(s).
+
+        Important fix:
+          - Do NOT apply repository-level filters on retrievers here.
+          - We must let the multi-stage retriever first search OVERVIEWS (by the query),
+            collect repository_ids from those overviews, and only then filter chunks by repo_id.
+          - To enforce that, we pass a copy of the request without repository_id to searcher.query.
         """
         if not self.searcher:
             logger.error("Searcher not available for repository query.")
             raise RuntimeError("Searcher not initialized")
 
         try:
-
-            # if repository filter present, set filters on the retrievers
-            repo_id = getattr(query_request, "repository_id", None)
-            if repo_id:
-                # apply filter on overview and chunk retrievers so results limited to that repo
-                # Structure used earlier in code: {"operator":"AND","conditions":[...]}
-                # We'll set filters directly on retriever instances
-                overview_retriever = self.searcher.overview_retriever
-                chunk_retriever = self.searcher.chunk_retriever
-                overview_retriever.filters = {"operator": "AND", "conditions": [
-                    {"field": "repository_id", "operator": "in", "value": [repo_id]}]}
-                chunk_retriever.filters = {"operator": "AND", "conditions": [
-                    {"field": "repository_id", "operator": "in", "value": [repo_id]}]}
-
             response = self.searcher.query(query_request)
 
             # map to RepositoryQueryResponse — adapt to your actual model
@@ -97,3 +88,4 @@ class RepositoryService:
         except Exception as e:
             logger.exception("Repository query failed: %s", e)
             raise RuntimeError(f"Repository query failed: {e}") from e
+
