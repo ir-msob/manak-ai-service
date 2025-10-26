@@ -46,7 +46,9 @@ class DocumentOverviewGenerator:
         except Exception as e:
             logger.exception("❌ Overview summarization failed: %s", e)
             # fallback to simple concatenation if summarizer fails
-            return "\n\n".join(texts[:5])  # limit to first 5 chunks
+            fallback_text = "\n\n".join(texts[:5])  # limit to first 5 chunks
+            logger.info(f"⚠️ Returning fallback overview with {len(fallback_text)} chars.")
+            return fallback_text
 
     # ------------------------ Internal Helpers ------------------------
 

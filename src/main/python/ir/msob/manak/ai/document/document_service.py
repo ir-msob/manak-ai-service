@@ -50,20 +50,22 @@ class DocumentService:
 
         Logs each step of the process for traceability.
         """
-        logger.info("📥 Add document request started: %s", dto.file_path)
+        logger.info("📥 Add document request started: document_id=%s", dto.document_id)
 
         try:
             # Fetch document metadata
             document: DocumentDto = await self.dms_client.get_document(dto.document_id)
             attachment: Attachment = dto.get_latest_attachment()
-            logger.info("✅ Document fetched successfully: %s", document.document_id)
+            logger.info("✅ Document fetched successfully: document_id=%s, attachment=%s",
+                        document.document_id, attachment.file_path)
 
             # Determine file extension
-            if "." not in attachment.file_path.split("/")[-1]:
-                raise HTTPException(status_code=400, detail="Cannot determine file extension from URL")
+            if "." not in attachment.file_name:
+                raise HTTPException(status_code=400, detail="Cannot determine file extension from file name")
             _, ext = os.path.splitext(attachment.file_name)
 
             if ext.lower() not in SUPPORTED_EXTENSIONS:
+                logger.warning("⚠️ Unsupported file type '%s' for document '%s'", ext, document.document_id)
                 raise HTTPException(
                     status_code=400,
                     detail=f"Unsupported file type '{ext}'. Allowed: {', '.join(SUPPORTED_EXTENSIONS)}"
@@ -77,13 +79,15 @@ class DocumentService:
 
             # Index the content in a background thread
             loop = asyncio.get_event_loop()
-            result: DocumentResponse = await loop.run_in_executor(None, self.indexer.index, document, file_content)
+            result: DocumentResponse = await loop.run_in_executor(None, self.indexer.index, document, None, file_content)
 
-            logger.info("🧩 Document indexed successfully: %s", result.document_id)
+            logger.info("🧩 Document indexed successfully: document_id=%s", result.document_id)
             return result
 
+        except HTTPException:
+            raise
         except Exception as e:
-            logger.exception("❌ Failed to process document '%s': %s", dto.file_path, e)
+            logger.exception("❌ Failed to process document '%s': %s", dto.document_id, e)
             raise RuntimeError(f"Document indexing failed: {str(e)}") from e
 
     # ---------- Overview Query ----------
@@ -91,20 +95,23 @@ class DocumentService:
         """
         Executes a multi-stage overview query on documents.
 
-        Logs query text, top_k value, and number of returned chunks.
+        Logs query text, top_k value, and number of returned overviews.
         """
         if not self.searcher:
-            logger.error("❌ Searcher not initialized.")
+            logger.error("❌ Searcher not initialized for overview query.")
             raise RuntimeError("Searcher not initialized.")
 
         try:
-            logger.info("🔍 Overview query started: '%s' (top_k=%d)", query_request.query, query_request.top_k)
-            response : DocumentOverviewResponse= self.searcher.overview_query(query_request)
+            logger.info("🔍 Overview query started: query='%s' (top_k=%d)", query_request.query, query_request.top_k)
+            response: DocumentOverviewResponse = self.searcher.overview_query(query_request)
+            logger.info("✅ Overview query completed: returned %d overviews", len(response.overviews))
+            if not response.overviews:
+                logger.warning("⚠️ Overview query returned no results for query='%s'", query_request.query)
             return response
 
         except Exception as e:
             logger.exception("❌ Overview query execution failed: %s", e)
-            raise RuntimeError(f"Query execution failed: {str(e)}") from e
+            raise RuntimeError(f"Overview query execution failed: {str(e)}") from e
 
     # ---------- Chunk Query ----------
     def chunk_query(self, query_request: DocumentQueryRequest) -> DocumentChunkResponse:
@@ -114,15 +121,17 @@ class DocumentService:
         Logs query text, top_k value, and number of returned chunks.
         """
         if not self.searcher:
-            logger.error("❌ Searcher not initialized.")
+            logger.error("❌ Searcher not initialized for chunk query.")
             raise RuntimeError("Searcher not initialized.")
 
         try:
-            logger.info("🔎 Chunk query started: '%s' (top_k=%d)", query_request.query, query_request.top_k)
-            response = self.searcher.chunk_query(query_request)
+            logger.info("🔎 Chunk query started: query='%s' (top_k=%d)", query_request.query, query_request.top_k)
+            response: DocumentChunkResponse = self.searcher.chunk_query(query_request)
             logger.info("✅ Chunk query completed with %d top chunks.", len(response.top_chunks))
+            if not response.top_chunks:
+                logger.warning("⚠️ Chunk query returned no results for query='%s'", query_request.query)
             return response
 
         except Exception as e:
             logger.exception("❌ Chunk query execution failed: %s", e)
-            raise RuntimeError(f"Query execution failed: {str(e)}") from e
+            raise RuntimeError(f"Chunk query execution failed: {str(e)}") from e

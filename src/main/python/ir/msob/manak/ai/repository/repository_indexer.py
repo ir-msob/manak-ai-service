@@ -37,6 +37,9 @@ class RepositoryIndexer:
         """
         Main entrypoint. Returns a dict with summary information about indexed files.
         """
+        repo_id = repository.id or "unknown"
+        logger.info("📦 Starting indexing for repository %s, branch='%s'", repo_id, branch)
+
         file_map: Dict[str, bytes] = {}
         indexed_files = []
 
@@ -45,7 +48,6 @@ class RepositoryIndexer:
             members = [n for n in zf.namelist() if not n.endswith("/") and not os.path.basename(n).startswith(".")]
             logger.info("Repository zip contains %d candidate files", len(members))
             for path in members:
-                # read raw
                 try:
                     raw = zf.read(path)
                     _, ext = os.path.splitext(path)
@@ -54,41 +56,43 @@ class RepositoryIndexer:
                         continue
                     file_map[path] = raw
                 except Exception as e:
-                    logger.exception("Failed to read path %s from zip: %s", path, e)
+                    logger.exception("❌ Failed to read path %s from zip: %s", path, e)
                     continue
+
+        if not file_map:
+            logger.warning("No indexable files found in repository %s", repo_id)
 
         # 2) For each file, chunk & store chunks
         for path, raw in file_map.items():
             try:
-                chunks = self.chunker.chunk_file(repository.id or "unknown", branch, path, raw)
+                chunks = self.chunker.chunk_file(repo_id, branch, path, raw)
                 if not chunks:
                     logger.warning("No chunks produced for %s", path)
                     continue
 
-                # store chunks into chunk collection via pipeline
                 logger.info("Storing %d chunks for file %s", len(chunks), path)
-                # Haystack pipeline expects input like {"embedder": {"documents": chunks}}
                 self.chunk_pipeline.run({"embedder": {"documents": chunks}})
-                indexed_files.append({"path": path, "chunks": len(chunks), "document_id_prefix": f"{repository.id}:{path}"})
-                logger.info("Stored chunks for %s", path)
+                indexed_files.append({"path": path, "chunks": len(chunks), "document_id_prefix": f"{repo_id}:{path}"})
+                logger.info("✅ Stored chunks for %s", path)
 
             except Exception as e:
-                logger.exception("Failed to process file %s: %s", path, e)
-                # continue with other files
+                logger.exception("❌ Failed to process file %s: %s", path, e)
+                continue
 
         # 3) Build overview and store it
-        overview_doc = self.overview_generator.build_overview(repository.id or "unknown", branch, file_map)
         try:
-            logger.info("Storing overview for repository %s", repository.id)
+            overview_doc = self.overview_generator.build_overview(repo_id, branch, file_map)
+            logger.info("Storing overview for repository %s", repo_id)
             self.overview_pipeline.run({"embedder": {"documents": [overview_doc]}})
-            logger.info("Stored overview for repository %s", repository.id)
+            logger.info("✅ Stored overview for repository %s", repo_id)
         except Exception as e:
-            logger.exception("Failed to store overview for repository %s: %s", repository.id, e)
-            # do not fail entire operation; return partial result
+            logger.exception("❌ Failed to store overview for repository %s: %s", repo_id, e)
+            # continue, return partial result
+            overview_doc = overview_doc if 'overview_doc' in locals() else None
 
         return {
-            "repository_id": repository.id,
+            "repository_id": repo_id,
             "name": repository.name,
             "indexed_files": indexed_files,
-            "overview_id": overview_doc.id
+            "overview_id": overview_doc.id if overview_doc else None
         }

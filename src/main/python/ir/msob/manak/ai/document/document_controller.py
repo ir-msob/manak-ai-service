@@ -63,7 +63,7 @@ async def add(dto: DocumentRequest):
 
     Logs the incoming request payload for debugging and tracing.
     """
-    logger.info("📥 Add document request received: %s", dto.dict())
+    logger.info("📥 Add document request received: document_id=%s", dto.document_id)
     return await service.add(dto)
 
 
@@ -75,10 +75,16 @@ def overview_query(query_request: DocumentQueryRequest):
 
     Logs the incoming query for tracing.
     """
-    logger.info("🔍 Overview query request received: %s", query_request.dict())
+    logger.info("🔍 Overview query request received: query='%s', document_ids=%s",
+                query_request.query, query_request.document_ids)
     if not query_request.query:
         raise HTTPException(status_code=400, detail="Empty query")
-    return service.overview_query(query_request)
+
+    response = service.overview_query(query_request)
+    logger.info("✅ Overview query completed: returned %d overviews", len(response.overviews))
+    if not response.overviews:
+        logger.warning("⚠️ Overview query returned no results for query='%s'", query_request.query)
+    return response
 
 
 @router.post("/document/chunk/query", response_model=DocumentChunkResponse, tags=["Documents"])
@@ -89,7 +95,13 @@ def chunk_query(query_request: DocumentQueryRequest):
 
     Logs the incoming query for tracing.
     """
-    logger.info("🔎 Chunk query request received: %s", query_request.dict())
+    logger.info("🔎 Chunk query request received: query='%s', document_ids=%s",
+                query_request.query, query_request.document_ids)
     if not query_request.query:
         raise HTTPException(status_code=400, detail="Empty query")
-    return service.chunk_query(query_request)
+
+    response = service.chunk_query(query_request)
+    logger.info("✅ Chunk query completed: returned %d chunks", len(response.top_chunks))
+    if not response.top_chunks:
+        logger.warning("⚠️ Chunk query returned no results for query='%s'", query_request.query)
+    return response

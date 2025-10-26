@@ -1,5 +1,4 @@
 import logging
-import uuid
 from typing import List
 
 from haystack.dataclasses import Document
@@ -10,7 +9,6 @@ from src.main.python.ir.msob.manak.ai.document.beans.document_overview_configura
     DocumentOverviewConfiguration
 from src.main.python.ir.msob.manak.ai.document.document_chunker import DocumentChunker
 from src.main.python.ir.msob.manak.ai.document.document_overview_generator import DocumentOverviewGenerator
-from src.main.python.ir.msob.manak.ai.document.model.document_request import DocumentRequest
 from src.main.python.ir.msob.manak.ai.document.model.document_response import DocumentResponse
 
 logger = logging.getLogger(__name__)
@@ -40,62 +38,70 @@ class DocumentIndexer:
             mime_type=attachment.mime_type
         )
 
-        context = f"[{dto.get_latest_attachment().file_name} | id={dto.id}]"
-        logger.info(f"🚀 Starting indexing {context}")
+        context = f"[{attachment.file_name} | id={dto.id}]"
+        logger.info("🚀 Starting indexing %s", context)
 
         try:
+            # Step 1: Chunking
             chunks = self._process_chunks(response, content, context)
+
+            # Step 2: Overview generation
             overview_doc = self._process_overview(response, chunks, context)
 
+            # Step 3: Store overview and chunks
             self._store_documents(overview_doc, chunks, context)
 
-            logger.info(f"✅ Completed indexing {context}")
+            logger.info("✅ Completed indexing %s", context)
             return response
 
         except Exception as e:
-            logger.exception(f"❌ Indexing failed for {context}: {e}")
+            logger.exception("❌ Indexing failed for %s: %s", context, e)
             raise
 
     # ------------------------ Internal Steps ------------------------
 
     def _process_chunks(self, res: DocumentResponse, content: str, context: str) -> List[Document]:
         """Chunk the file into smaller pieces."""
-        logger.info(f"🧩 Chunking document {context}")
-        chunks = self.chunker.chunk_file(res, content)
+        logger.info("🧩 Chunking document %s", context)
+        chunks = self.chunker.chunk_file(res.document_id, None, res.file_path, content.encode("utf-8"))
         if not chunks:
-            logger.warning(f"No chunks produced for {context}. Skipping indexing.")
+            logger.warning("⚠️ No chunks produced for %s", context)
             raise ValueError(f"No chunks generated for {res.file_path}")
-        logger.info(f"✅ Generated {len(chunks)} chunks for {context}")
+        logger.info("✅ Generated %d chunks for %s", len(chunks), context)
         return chunks
 
     def _process_overview(self, res: DocumentResponse, chunks: List[Document], context: str) -> Document:
         """Generate an overview document summarizing the content."""
-        logger.info(f"🧠 Generating overview for {context}")
-        overview_text = self.overview_generator.generate(chunks)
+        logger.info("🧠 Generating overview for %s", context)
+        # Collect all chunk contents
+        texts = [chunk.content for chunk in chunks]
+        overview_text = self.overview_generator.hierarchical_summarizer.summarize(texts)
         overview_doc = Document(
             id=f"{res.document_id}_overview",
             content=overview_text,
             meta=self._build_meta(res, doc_type="overview")
         )
-        logger.debug(f"Overview length: {len(overview_text)} chars for {context}")
+        logger.debug("Overview length: %d chars for %s", len(overview_text), context)
         return overview_doc
 
     def _store_documents(self, overview_doc: Document, chunks: List[Document], context: str):
         """Store overview and chunks into their respective Milvus collections."""
-        logger.info(f"📥 Storing overview document for {context}")
+        # Store overview
+        logger.info("📥 Storing overview document for %s", context)
         try:
             self.overview_pipeline.run({"embedder": {"documents": [overview_doc]}})
-            logger.info(f"✅ Overview stored for {context}")
+            logger.info("✅ Overview stored for %s", context)
         except Exception as e:
-            logger.exception(f"Failed to store overview document for {context}: {e}")
+            logger.exception("❌ Failed to store overview document for %s: %s", context, e)
             raise
 
-        logger.info(f"📦 Storing {len(chunks)} chunks for {context}")
+        # Store chunks
+        logger.info("📦 Storing %d chunks for %s", len(chunks), context)
         try:
             self.chunk_pipeline.run({"embedder": {"documents": chunks}})
-            logger.info(f"✅ Chunks stored for {context}")
+            logger.info("✅ Chunks stored for %s", context)
         except Exception as e:
-            logger.exception(f"Failed to store chunks for {context}: {e}")
+            logger.exception("❌ Failed to store chunks for %s: %s", context, e)
             raise
 
     # ------------------------ Utility ------------------------

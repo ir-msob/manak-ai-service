@@ -20,17 +20,16 @@ class DocumentChunker:
     """
 
     def __init__(self):
-        # 🔹 Load configuration
         self.config = ConfigConfiguration().get_properties()
+        # Ensure overlap is non-negative and smaller than chunk size
+        self.chunk_size = max(1, self.config.application.milvus.document.chunk.chunk_words_size)
+        self.overlap = min(self.chunk_size - 1, max(0, self.config.application.milvus.document.chunk.chunk_overlap))
 
         logger.info(
-            f"DocumentChunker initialized (chunk_size={self.config.application.milvus.document.chunk.chunk_words_size}, overlap={self.config.application.milvus.document.chunk.chunk_overlap})"
+            f"DocumentChunker initialized (chunk_size={self.chunk_size}, overlap={self.overlap})"
         )
 
     def chunk_file(self, res: DocumentResponse, content: str) -> List[Document]:
-        """
-        Dispatch method — calls the right chunking logic based on mime_type.
-        """
         mime_type = res.mime_type.lower().strip()
 
         if mime_type in [
@@ -46,15 +45,11 @@ class DocumentChunker:
     # MARKDOWN CHUNKING
     # ============================================================
     def _chunk_markdown(self, res: DocumentResponse, content: str) -> List[Document]:
-        """
-        Splits a markdown file into smaller chunks using configured size and overlap.
-        """
         logger.info(f"Chunking markdown file: {res.file_path}")
 
         text, meta = read_markdown_file(res, content)
         res.meta = meta
 
-        # Split by markdown headers (section-level split)
         sections = split_markdown_to_sections(text)
         logger.debug(f"Markdown split into {len(sections)} sections before chunking.")
 
@@ -76,10 +71,11 @@ class DocumentChunker:
                             "chunk_order": chunk_counter,
                             "type": "chunk",
                             "section_index": section_idx,
-                            "original_section_length": len(section)
+                            "original_section_length": len(section.split())
                         },
                     )
                 )
+                logger.debug(f"Created chunk {chunk_id} ({len(sub_chunk.split())} words).")
                 chunk_counter += 1
 
         logger.info(f"✅ Created {len(chunks)} chunks from markdown file: {res.file_path}")
@@ -89,20 +85,18 @@ class DocumentChunker:
     # SHARED TEXT SPLITTER
     # ============================================================
     def _split_text_into_chunks(self, text: str) -> List[str]:
-        """
-        Generic text splitter with overlap.
-        """
         words = text.split()
+        if not words:
+            return []
+
         chunks = []
+        step = max(1, self.chunk_size - self.overlap)
         start = 0
 
         while start < len(words):
-            end = start + self.config.application.milvus.document.chunk.chunk_words_size
-            chunk_words = words[start:end]
-            chunks.append(" ".join(chunk_words))
-            start += self.config.application.milvus.document.chunk.chunk_words_size - self.config.application.milvus.document.chunk.chunk_overlap
+            end = start + self.chunk_size
+            chunks.append(" ".join(words[start:end]))
+            start += step
 
-        logger.debug(
-            f"Generated {len(chunks)} chunks from section ({len(words)} words total)."
-        )
+        logger.debug(f"Generated {len(chunks)} chunks from section ({len(words)} words total).")
         return chunks

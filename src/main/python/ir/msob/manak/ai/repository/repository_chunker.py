@@ -20,8 +20,9 @@ class RepositoryChunker:
 
     def __init__(self):
         # default values chosen conservatively; override via config if present
-        self.chunk_size = ConfigConfiguration().get_properties().application.milvus.repository.chunk.chunk_words_size
-        self.overlap = ConfigConfiguration().get_properties().application.milvus.repository.chunk.chunk_overlap
+        props = ConfigConfiguration().get_properties().application.milvus.repository.chunk
+        self.chunk_size = props.chunk_words_size
+        self.overlap = props.chunk_overlap
 
     @staticmethod
     def _sha256_bytes(b: bytes) -> str:
@@ -38,24 +39,25 @@ class RepositoryChunker:
         }
         Document.id is "<repo_id>:<path>:chunk:<index>"
         """
+        logger.info("📝 Starting chunking file '%s' (repo=%s)", path, repo_id)
+
+        # decode text
         try:
-            # try decode text; fallback to latin-1 with replacement
             try:
                 text = raw_bytes.decode("utf-8")
             except Exception:
                 text = raw_bytes.decode("latin-1", errors="replace")
         except Exception as e:
-            logger.exception("Failed to decode file %s: %s", path, e)
+            logger.exception("❌ Failed to decode file %s: %s", path, e)
+            return []
+
+        if not text:
+            logger.warning("File %s is empty, skipping chunking.", path)
             return []
 
         length = len(text)
-        if length == 0:
-            return []
-
         chunks: List[Document] = []
-        step = self.chunk_size - self.overlap
-        if step <= 0:
-            step = self.chunk_size
+        step = max(self.chunk_size - self.overlap, 1)
 
         indices = list(range(0, length, step))
         total_chunks = len(indices)
@@ -82,14 +84,7 @@ class RepositoryChunker:
                 "type": "chunk",
             }
             doc_id = f"{repo_id}:{path}:chunk:{idx}"
-            doc = Document(id=doc_id, content=content, meta=meta)
-            chunks.append(doc)
+            chunks.append(Document(id=doc_id, content=content, meta=meta))
 
-        logger.debug("Chunked %s into %d chunks (repo=%s)", path, total_chunks, repo_id)
+        logger.info("✅ Finished chunking file '%s' into %d chunks (repo=%s)", path, total_chunks, repo_id)
         return chunks
-
-
-
-
-
-
