@@ -4,6 +4,7 @@ server:
 python:
   application:
     name: "ai-service"
+    base_url: "http://localhost:${server.port}"
   profiles:
     active:
       - dev
@@ -27,6 +28,23 @@ python:
               - openid
 milvus:
   uri: "http://localhost:19530"
+
+kafka:
+  bootstrap-servers: localhost:9092
+  # Consumer configurations (optional)
+  consumer:
+    group-id: ${python.application.name}
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    bootstrap-servers: localhost:9092
+  # Producer configurations (optional)
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    bootstrap-servers: localhost:9092
+
+tool:
+  tool-provider-topic: "tool-provider_v1_tool-provider_save"
 
 models:
   embedding_model: "/home/yaqub/WorkspaceData/huggingface/models/all-MiniLM-L6-v2"

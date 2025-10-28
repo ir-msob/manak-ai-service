@@ -1,6 +1,4 @@
-# src/main/python/ir/msob/manak/ai/config/config_models.py
-from typing import Optional, Dict, Any
-
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
 
 
@@ -13,6 +11,7 @@ class ServerProperties(BaseModel):
 
 class PythonApplicationProperties(BaseModel):
     name: str
+    base_url: Optional[str] = None
 
 
 # ===============================
@@ -26,17 +25,31 @@ class ResourceServerProperties(BaseModel):
     jwt: JwtProperties
 
 
+class OAuth2ProviderProperties(BaseModel):
+    issuer_uri: str
+
+
+class OAuth2ClientProviderProperties(BaseModel):
+    service_client: OAuth2ProviderProperties
+
+
 class OAuth2ClientRegistrationProperties(BaseModel):
     client_name: str
     client_id: str
     client_secret: str
     authorization_grant_type: str
     client_authentication_method: str
-    scope: list[str]
+    scope: List[str]
+
+
+class OAuth2ClientRegistrationMap(BaseModel):
+    service_client: OAuth2ClientRegistrationProperties
+
 
 class OAuth2ClientProperties(BaseModel):
-    provider: Dict[str, Dict[str, str]]
-    registration: Dict[str, OAuth2ClientRegistrationProperties]
+    provider: OAuth2ClientProviderProperties
+    registration: OAuth2ClientRegistrationMap
+
 
 class OAuth2Properties(BaseModel):
     resource_server: ResourceServerProperties
@@ -47,10 +60,46 @@ class SecurityProperties(BaseModel):
     oauth2: OAuth2Properties
 
 
+# ===============================
+# Python Section
+# ===============================
+class PythonProfilesProperties(BaseModel):
+    active: List[str]
+
+
 class PythonProperties(BaseModel):
     application: PythonApplicationProperties
-    profiles: Dict[str, list[str]]
+    profiles: PythonProfilesProperties
     security: Optional[SecurityProperties] = None
+
+
+# ===============================
+# Kafka Section
+# ===============================
+class KafkaConsumerProperties(BaseModel):
+    group_id: str
+    key_deserializer: str
+    value_deserializer: str
+    bootstrap_servers: str
+
+
+class KafkaProducerProperties(BaseModel):
+    key_serializer: str
+    value_serializer: str
+    bootstrap_servers: str
+
+
+class KafkaProperties(BaseModel):
+    bootstrap_servers: str
+    consumer: Optional[KafkaConsumerProperties] = None
+    producer: Optional[KafkaProducerProperties] = None
+
+
+# ===============================
+# Tool Section
+# ===============================
+class ToolProperties(BaseModel):
+    tool_provider_topic: str
 
 
 # ===============================
@@ -149,6 +198,9 @@ class MilvusApplicationProperties(BaseModel):
     repository: MilvusRepositoryProperties
 
 
+# ===============================
+# Application Section
+# ===============================
 class ApplicationProperties(BaseModel):
     milvus: MilvusApplicationProperties
 
@@ -160,5 +212,7 @@ class RootProperties(BaseModel):
     server: ServerProperties
     python: PythonProperties
     milvus: MilvusProperties
+    kafka: Optional[KafkaProperties] = None
+    tool: Optional[ToolProperties] = None
     models: ModelsProperties
     application: ApplicationProperties
