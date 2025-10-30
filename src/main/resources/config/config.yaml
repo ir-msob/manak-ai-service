@@ -3,7 +3,7 @@ server:
 
 python:
   application:
-    name: "ai-service"
+    name: "vectorhub"
     base_url: "http://localhost:${server.port}"
   profiles:
     active:
