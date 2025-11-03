@@ -38,18 +38,18 @@ public interface ModelProviderService {
     @SneakyThrows
     private Flux<ToolCallback> getDynamicTools(ChatRequest dto, User user) {
         return getRegistryClient().getStream(user)
-                .filter(toolDto -> dto.getTools().isEmpty() || dto.getTools().contains(toolDto.getKey()))
+                .filter(toolDto -> dto.getTools().isEmpty() || dto.getTools().contains(toolDto.getToolId()))
                 .map(this::prepareToolCallback);
     }
 
     private ToolCallback prepareToolCallback(ToolDto toolDto) throws NoSuchMethodException {
         ToolDefinition toolDefinition = DefaultToolDefinition.builder()
-                .name(toolDto.getKey())
-                .description(toolDto.getDescription())
+                .name(toolDto.getToolId())
+                .description(toolDto.getDescription()) // ADD output and error schema
                 .inputSchema(toolDto.getInputSchema().toString()) // TODO
                 .build();
 
-        ToolHandler toolHandler = new ToolHandler(toolDto.getKey(), getInvoker());
+        ToolHandler toolHandler = new ToolHandler(toolDto.getToolId(), getInvoker());
 
         Method handlerMethod = ToolHandler.class.getMethod("handle", Map.class);
 

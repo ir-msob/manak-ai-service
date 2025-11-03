@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ToolHandler {
-    private final String action;
+    private final String toolId;
     private final Invoker invoker;
 
-    public ToolHandler(String action, Invoker invoker) {
-        this.action = Objects.requireNonNull(action);
+    public ToolHandler(String toolId, Invoker invoker) {
+        this.toolId = Objects.requireNonNull(toolId);
         this.invoker = Objects.requireNonNull(invoker);
     }
 
@@ -18,6 +18,6 @@ public class ToolHandler {
      * It simply forwards to myTool.invoke(action, params).
      */
     public Object handle(Map<String, Serializable> params) {
-        return invoker.invoke(action, params);
+        return invoker.invoke(toolId, params);
     }
 }

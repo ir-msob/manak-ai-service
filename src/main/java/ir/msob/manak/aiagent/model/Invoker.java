@@ -18,9 +18,9 @@ public class Invoker {
     private final UserService userService;
 
     @SneakyThrows
-    public Object invoke(String action, Map<String, Serializable> params) {
+    public Object invoke(String toolId, Map<String, Serializable> params) {
         InvokeRequest request = InvokeRequest.builder()
-                .toolId(action)
+                .toolId(toolId)
                 .params(params)
                 .build();
         return gatewayClient.invoke(request, userService.getSystemUser())
