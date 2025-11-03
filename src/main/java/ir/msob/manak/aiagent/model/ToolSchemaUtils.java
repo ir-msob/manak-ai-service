@@ -144,6 +144,20 @@ public class ToolSchemaUtils {
         if (param.getExample() != null) schema.put("example", param.getExample());
         if (param.getDefaultValue() != null) schema.put("default", param.getDefaultValue());
 
+        if (param.getEnumValues() != null && !param.getEnumValues().isEmpty()) {
+            schema.put("enum", param.getEnumValues());
+        }
+        if (param.getMinimum() != null) schema.put("minimum", param.getMinimum());
+        if (param.getMaximum() != null) schema.put("maximum", param.getMaximum());
+        if (param.getMinLength() != null) schema.put("minLength", param.getMinLength());
+        if (param.getMaxLength() != null) schema.put("maxLength", param.getMaxLength());
+        if (param.getPattern() != null) schema.put("pattern", param.getPattern());
+
+        if (Boolean.TRUE.equals(param.getNullable())) {
+            schema.compute("type", (k, t) -> Arrays.asList(t, "null"));
+        }
+        if (param.getExample() != null) schema.put("examples", Collections.singletonList(param.getExample()));
+
         return schema;
     }
 
@@ -197,17 +211,15 @@ public class ToolSchemaUtils {
 
     private String detectJsonType(ToolParameter param) {
         if (param == null || param.getType() == null) return "string";
-        String raw = param.getType().toString().toLowerCase(Locale.ROOT);
-        return switch (raw) {
-            case "string", "str", "text" -> "string";
-            case "int", "integer", "long" -> "integer";
-            case "float", "double", "number", "decimal" -> "number";
-            case "bool", "boolean" -> "boolean";
-            case "object", "map" -> "object";
-            case "array", "list" -> "array";
-            default -> "string";
+        return switch (param.getType()) {
+            case STRING -> "string";
+            case NUMBER -> "number";
+            case BOOLEAN -> "boolean";
+            case OBJECT -> "object";
+            case ARRAY -> "array";
         };
     }
+
 
     private boolean isRequired(ToolParameter param) {
         if (param == null) return false;
