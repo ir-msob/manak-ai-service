@@ -10,7 +10,6 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.DefaultToolDefinition;
 import org.springframework.ai.tool.definition.ToolDefinition;
-import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.ai.tool.method.MethodToolCallback;
 import reactor.core.publisher.Flux;
 
@@ -24,6 +23,8 @@ public interface ModelProviderService {
     <CM extends ChatModel> CM getChatModel(String key);
 
     Invoker getInvoker();
+
+    ToolSchemaUtils getToolSchemaUtils();
 
     default Flux<String> chat(ChatRequest dto, User user) {
         return getDynamicTools(dto, user)
@@ -43,10 +44,24 @@ public interface ModelProviderService {
     }
 
     private ToolCallback prepareToolCallback(ToolDto toolDto) throws NoSuchMethodException {
+        // build an informative description that includes response schema summary so the LLM can see it
+        String description = toolDto.getDescription() == null ? "" : toolDto.getDescription();
+        if (toolDto.getOutputSchema() != null) {
+            // small, human-readable note; avoid super long raw JSON here — but you can include a concise JSON example
+            description += "\n\nResponse format (JSON): " + getToolSchemaUtils().exampleForSchema(toolDto.getOutputSchema());
+        }
+
         ToolDefinition toolDefinition = DefaultToolDefinition.builder()
                 .name(toolDto.getToolId())
-                .description(toolDto.getDescription()) // ADD output and error schema
-                .inputSchema(toolDto.getInputSchema().toString()) // TODO
+                .description(description)
+                .inputSchema(getToolSchemaUtils().toJsonSchema(toolDto.getInputSchema()))
+                .build();
+
+        // prepare metadata with output/error schema strings (for server-side validation)
+        ExtendedToolMetadata metadata = ExtendedToolMetadata.builder()
+                .outputSchemaJson(getToolSchemaUtils().toJsonSchema(toolDto.getOutputSchema()))
+                .errorSchemaJson(getToolSchemaUtils().toJsonSchema(toolDto.getErrorSchema()))
+                .version(toolDto.getVersion())
                 .build();
 
         ToolHandler toolHandler = new ToolHandler(toolDto.getToolId(), getInvoker());
@@ -55,9 +70,10 @@ public interface ModelProviderService {
 
         return MethodToolCallback.builder()
                 .toolDefinition(toolDefinition)
-                .toolMetadata(ToolMetadata.builder().build())
+                .toolMetadata(metadata)
                 .toolMethod(handlerMethod)
                 .toolObject(toolHandler)
                 .build();
     }
+
 }

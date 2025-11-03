@@ -3,6 +3,7 @@ package ir.msob.manak.aiagent.model.ollama;
 import ir.msob.manak.aiagent.client.RegistryClient;
 import ir.msob.manak.aiagent.model.Invoker;
 import ir.msob.manak.aiagent.model.ModelProviderService;
+import ir.msob.manak.aiagent.model.ToolSchemaUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.ollama.OllamaChatModel;
@@ -17,6 +18,7 @@ public class OllamaProviderService implements ModelProviderService {
     private final Map<String, OllamaChatModel> ollamaChatModels;
     private final RegistryClient registryClient;
     private final Invoker invoker;
+    private final ToolSchemaUtils toolSchemaUtils;
 
     @Override
     public RegistryClient getRegistryClient() {
@@ -30,7 +32,12 @@ public class OllamaProviderService implements ModelProviderService {
 
     @Override
     public Invoker getInvoker() {
-        return null;
+        return invoker;
+    }
+
+    @Override
+    public ToolSchemaUtils getToolSchemaUtils() {
+        return toolSchemaUtils;
     }
 
 }
