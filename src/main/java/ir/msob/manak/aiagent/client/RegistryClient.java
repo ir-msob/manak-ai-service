@@ -28,7 +28,6 @@ public class RegistryClient {
                         .build())
                 .headers((builder) -> domainCrudWebClient.setDefaultHeaders(builder, user))
                 .retrieve()
-                .bodyToFlux(ToolDto.class)
-                .retryWhen(this.jimaProperties.getClient().getRetryRequest().createRetryBackoffSpec());
+                .bodyToFlux(ToolDto.class);
     }
 }

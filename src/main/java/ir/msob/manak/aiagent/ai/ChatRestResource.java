@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.security.Principal;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping(ChatRestResource.BASE_URI)
@@ -27,11 +29,10 @@ public class ChatRestResource {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<Flux<String>> chat(@RequestBody ChatRequest dto, Principal principal) {
+    public Mono<ResponseEntity<List<String>>> chat(@RequestBody ChatRequest dto, Principal principal) throws ExecutionException, InterruptedException {
         logger.info("REST request to chat, dto : {}", dto);
         User user = userService.getUser(principal);
-        Flux<String> res = service.chat(dto, user);
-        return ResponseEntity.status(OperationsStatus.SAVE).body(res);
+        return service.chat(dto, user).collectList().map(res -> ResponseEntity.status(OperationsStatus.SAVE).body(res));
     }
 
 }

@@ -43,7 +43,8 @@ public interface ModelProviderService {
                 .map(this::prepareToolCallback);
     }
 
-    private ToolCallback prepareToolCallback(ToolDto toolDto) throws NoSuchMethodException {
+    @SneakyThrows
+    private ToolCallback prepareToolCallback(ToolDto toolDto) {
         // build an informative description that includes response schema summary so the LLM can see it
         String description = toolDto.getDescription() == null ? "" : toolDto.getDescription();
         if (toolDto.getOutputSchema() != null) {
