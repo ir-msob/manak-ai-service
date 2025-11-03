@@ -18,7 +18,7 @@ public class Invoker {
     private final UserService userService;
 
     @SneakyThrows
-    public Object invoke(String toolId, Map<String, Serializable> params) {
+    public Serializable invoke(String toolId, Map<String, Serializable> params) {
         InvokeRequest request = InvokeRequest.builder()
                 .toolId(toolId)
                 .params(params)
