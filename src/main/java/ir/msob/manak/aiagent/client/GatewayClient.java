@@ -25,12 +25,11 @@ public class GatewayClient {
         return this.webClient.post()
                 .uri(builder -> builder
                         .host(domainInfo.serviceName())
-                        .path("/api/v1/gateway")
+                        .path("/api/v1/gateway/invoke")
                         .build())
                 .headers((builder) -> domainCrudWebClient.setDefaultHeaders(builder, user))
                 .bodyValue(dto)
                 .retrieve()
-                .bodyToMono(InvokeResponse.class)
-                .retryWhen(this.jimaProperties.getClient().getRetryRequest().createRetryBackoffSpec());
+                .bodyToMono(InvokeResponse.class);
     }
 }
