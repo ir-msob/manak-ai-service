@@ -1,4 +1,4 @@
-package ir.msob.manak.aiagent.model;
+package ir.msob.manak.aiagent.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ToolParameter;
@@ -16,7 +16,7 @@ import java.util.*;
  */
 @Component
 @RequiredArgsConstructor
-public class ToolSchemaUtils {
+public class ToolSchemaUtil {
 
     private final ObjectMapper objectMapper;
 

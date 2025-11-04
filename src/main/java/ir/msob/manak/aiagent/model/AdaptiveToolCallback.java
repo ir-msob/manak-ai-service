@@ -13,15 +13,15 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
-public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata toolMetadata, ToolHandler toolHandler,
+public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata toolMetadata, ToolInvocationAdapter toolInvocationAdapter,
                                    ObjectMapper objectMapper) implements ToolCallback {
     private static final Logger log = LoggerFactory.getLogger(AdaptiveToolCallback.class);
 
     public AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata toolMetadata,
-                                ToolHandler toolHandler, ObjectMapper objectMapper) {
+                                ToolInvocationAdapter toolInvocationAdapter, ObjectMapper objectMapper) {
         this.toolDefinition = toolDefinition;
         this.toolMetadata = toolMetadata;
-        this.toolHandler = toolHandler;
+        this.toolInvocationAdapter = toolInvocationAdapter;
         this.objectMapper = objectMapper;
 
         log.debug("MyToolCallback initialized for tool: {}", toolDefinition.name());
@@ -47,7 +47,7 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
             Map<String, Serializable> params = parseInput(toolInput);
 
             // Call tool handler
-            Serializable result = toolHandler.handle(params);
+            Serializable result = toolInvocationAdapter.handle(params);
 
             // Convert result to JSON string
             return serializeResult(result);

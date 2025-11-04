@@ -2,10 +2,13 @@ package ir.msob.manak.aiagent.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.manak.aiagent.client.RegistryClient;
+import ir.msob.manak.aiagent.util.ToolSchemaUtil;
 import ir.msob.manak.core.model.jima.security.User;
 import ir.msob.manak.domain.model.aiagent.chat.ChatRequest;
 import ir.msob.manak.domain.model.toolhub.dto.ToolDto;
 import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
@@ -15,25 +18,43 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 
+/**
+ * Base interface for AI model provider services (e.g., Ollama, OpenAI, etc.)
+ * that integrate dynamically registered tools.
+ */
 public interface ModelProviderService {
+
+    Logger log = LoggerFactory.getLogger(ModelProviderService.class);
 
     RegistryClient getRegistryClient();
 
     <CM extends ChatModel> CM getChatModel(String key);
 
-    Invoker getInvoker();
+    ToolInvoker getToolInvoker();
 
-    ToolSchemaUtils getToolSchemaUtils();
+    ToolSchemaUtil getToolSchemaUtil();
 
     ObjectMapper getObjectMapper();
 
+    /**
+     * Handles a chat request with dynamic tool registration and streaming response.
+     */
     default Flux<String> chat(ChatRequest request, User user) {
+        log.info("💬 Starting chat for model '{}', message: '{}'", request.getModelSpecificationKey(), request.getMessage());
         return getDynamicTools(request, user)
                 .collectList()
-                .flatMapMany(toolCallbacks -> buildChatClient(request, toolCallbacks));
+                .doOnNext(tools -> log.info("🧩 {} dynamic tools loaded for model '{}'", tools.size(), request.getModelSpecificationKey()))
+                .flatMapMany(toolCallbacks -> buildChatClient(request, toolCallbacks))
+                .doOnComplete(() -> log.info("✅ Chat session completed for model '{}'", request.getModelSpecificationKey()))
+                .doOnError(e -> log.error("❌ Chat session failed for model '{}': {}", request.getModelSpecificationKey(), e.getMessage(), e));
     }
 
+    /**
+     * Builds a ChatClient configured with tool callbacks.
+     */
     private Flux<String> buildChatClient(ChatRequest request, List<ToolCallback> toolCallbacks) {
+        log.debug("⚙️ Building ChatClient for model '{}' with {} tools...", request.getModelSpecificationKey(), toolCallbacks.size());
+
         return ChatClient.create(getChatModel(request.getModelSpecificationKey()))
                 .prompt(request.getMessage())
                 .toolCallbacks(toolCallbacks)
@@ -41,36 +62,60 @@ public interface ModelProviderService {
                 .content();
     }
 
+    /**
+     * Dynamically loads tool definitions from registry and maps them to callbacks.
+     */
     @SneakyThrows
     private Flux<ToolCallback> getDynamicTools(ChatRequest request, User user) {
+        log.debug("🔍 Fetching available tools from registry...");
+
         return getRegistryClient().getStream(user)
                 .filter(toolDto -> isToolIncluded(toolDto, request.getTools()))
-                .map(this::prepareToolCallback);
+                .map(this::prepareToolCallback)
+                .doOnNext(tool -> log.debug("✅ Registered tool callback for '{}'", tool.getToolDefinition().name()))
+                .doOnComplete(() -> log.info("📦 Dynamic tool discovery completed."))
+                .doOnError(e -> log.error("❌ Error fetching tools from registry: {}", e.getMessage(), e));
     }
 
-    private boolean isToolIncluded(ToolDto toolDto, java.util.List<String> requestedTools) {
-        return requestedTools.isEmpty() || requestedTools.contains(toolDto.getToolId());
+    /**
+     * Determines whether a tool should be included based on the request.
+     */
+    private boolean isToolIncluded(ToolDto toolDto, List<String> requestedTools) {
+        boolean included = requestedTools.isEmpty() || requestedTools.contains(toolDto.getToolId());
+        log.trace("Tool '{}' inclusion check: {}", toolDto.getToolId(), included);
+        return included;
     }
 
+    /**
+     * Converts a ToolDto into a ToolCallback with schema and metadata.
+     */
     @SneakyThrows
     private ToolCallback prepareToolCallback(ToolDto toolDto) {
+        log.debug("🛠 Preparing ToolCallback for '{}'", toolDto.getToolId());
+
         ToolDefinition toolDefinition = createToolDefinition(toolDto);
         ExtendedToolMetadata metadata = createToolMetadata(toolDto);
-        ToolHandler toolHandler = createToolHandler(toolDto);
+        ToolInvocationAdapter toolInvocationAdapter = createToolHandler(toolDto);
 
-        return new AdaptiveToolCallback(toolDefinition, metadata, toolHandler, getObjectMapper());
+        return new AdaptiveToolCallback(toolDefinition, metadata, toolInvocationAdapter, getObjectMapper());
     }
 
+    /**
+     * Builds a ToolDefinition describing the input schema and description.
+     */
     private ToolDefinition createToolDefinition(ToolDto toolDto) {
         String description = buildToolDescription(toolDto);
 
         return DefaultToolDefinition.builder()
                 .name(toolDto.getToolId())
                 .description(description)
-                .inputSchema(getToolSchemaUtils().toJsonSchema(toolDto.getInputSchema()))
+                .inputSchema(getToolSchemaUtil().toJsonSchema(toolDto.getInputSchema()))
                 .build();
     }
 
+    /**
+     * Builds a human-readable description for the tool including example outputs.
+     */
     private String buildToolDescription(ToolDto toolDto) {
         StringBuilder description = new StringBuilder();
 
@@ -80,21 +125,27 @@ public interface ModelProviderService {
 
         if (toolDto.getOutputSchema() != null) {
             description.append("\n\nResponse format (JSON): ")
-                    .append(getToolSchemaUtils().exampleForSchema(toolDto.getOutputSchema()));
+                    .append(getToolSchemaUtil().exampleForSchema(toolDto.getOutputSchema()));
         }
 
         return description.toString();
     }
 
+    /**
+     * Creates tool metadata for error and output schema tracking.
+     */
     private ExtendedToolMetadata createToolMetadata(ToolDto toolDto) {
         return ExtendedToolMetadata.builder()
-                .outputSchemaJson(getToolSchemaUtils().toJsonSchema(toolDto.getOutputSchema()))
-                .errorSchemaJson(getToolSchemaUtils().toJsonSchema(toolDto.getErrorSchema()))
+                .outputSchemaJson(getToolSchemaUtil().toJsonSchema(toolDto.getOutputSchema()))
+                .errorSchemaJson(getToolSchemaUtil().toJsonSchema(toolDto.getErrorSchema()))
                 .version(toolDto.getVersion())
                 .build();
     }
 
-    private ToolHandler createToolHandler(ToolDto toolDto) {
-        return new ToolHandler(toolDto.getToolId(), getInvoker());
+    /**
+     * Creates a tool handler adapter for invocation routing.
+     */
+    private ToolInvocationAdapter createToolHandler(ToolDto toolDto) {
+        return new ToolInvocationAdapter(toolDto.getToolId(), getToolInvoker());
     }
 }

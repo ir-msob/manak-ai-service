@@ -2,9 +2,9 @@ package ir.msob.manak.aiagent.model.ollama;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.manak.aiagent.client.RegistryClient;
-import ir.msob.manak.aiagent.model.Invoker;
 import ir.msob.manak.aiagent.model.ModelProviderService;
-import ir.msob.manak.aiagent.model.ToolSchemaUtils;
+import ir.msob.manak.aiagent.model.ToolInvoker;
+import ir.msob.manak.aiagent.util.ToolSchemaUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;
@@ -15,8 +15,8 @@ public class OllamaProviderService implements ModelProviderService {
 
     private final OllamaRegistry ollamaRegistry;
     private final RegistryClient registryClient;
-    private final Invoker invoker;
-    private final ToolSchemaUtils toolSchemaUtils;
+    private final ToolInvoker toolInvoker;
+    private final ToolSchemaUtil toolSchemaUtil;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -30,13 +30,13 @@ public class OllamaProviderService implements ModelProviderService {
     }
 
     @Override
-    public Invoker getInvoker() {
-        return invoker;
+    public ToolInvoker getToolInvoker() {
+        return toolInvoker;
     }
 
     @Override
-    public ToolSchemaUtils getToolSchemaUtils() {
-        return toolSchemaUtils;
+    public ToolSchemaUtil getToolSchemaUtil() {
+        return toolSchemaUtil;
     }
 
     @Override

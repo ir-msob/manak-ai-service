@@ -10,6 +10,8 @@ import java.io.Serializable;
  * @param errorSchemaJson  JSON schema as string (optional)
  */
 @Builder
-public record ExtendedToolMetadata(boolean returnDirect, String outputSchemaJson, String errorSchemaJson,
+public record ExtendedToolMetadata(boolean returnDirect,
+                                   String outputSchemaJson,
+                                   String errorSchemaJson,
                                    String version) implements ToolMetadata, Serializable {
 }
