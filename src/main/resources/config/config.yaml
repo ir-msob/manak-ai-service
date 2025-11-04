@@ -30,21 +30,21 @@ milvus:
   uri: "http://localhost:19530"
 
 kafka:
-  bootstrap-servers: localhost:9092
+  bootstrap_servers: localhost:9092
   # Consumer configurations (optional)
   consumer:
-    group-id: ${python.application.name}
-    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    bootstrap-servers: localhost:9092
+    group_id: ${python.application.name}
+    key_deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    value_deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    bootstrap_servers: localhost:9092
   # Producer configurations (optional)
   producer:
-    key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    value-serializer: org.apache.kafka.common.serialization.StringSerializer
-    bootstrap-servers: localhost:9092
+    key_serializer: org.apache.kafka.common.serialization.StringSerializer
+    value_serializer: org.apache.kafka.common.serialization.StringSerializer
+    bootstrap_servers: localhost:9092
 
 tool:
-  tool-provider-topic: "tool-provider_v1_tool-provider_save"
+  tool_provider_topic: "tool-provider_v1_tool-provider_save"
 
 models:
   embedding_model: "/home/yaqub/WorkspaceData/huggingface/models/all-MiniLM-L6-v2"
