@@ -1,5 +1,5 @@
 server:
-  port: 8000
+  port: 8001
 
 python:
   application:
@@ -16,7 +16,7 @@ python:
       client:
         provider:
           service_client:
-            issuer_uri: ${spring.security.oauth2.resource-server.jwt.issuer-uri}
+            issuer_uri: ${python.security.oauth2.resource_server.jwt.issuer_uri}
         registration:
           service_client:
             client_name: service-client

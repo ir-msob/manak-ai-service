@@ -15,13 +15,15 @@ logger = logging.getLogger(__name__)
 
 class ConfigLoader:
     """
-    Loads YAML into RootProperties, resolves ${models.*} placeholders,
-    and applies environment overrides. This version includes verbose debug
-    logging and timings to help locate where startup blocks or fails.
+    Loads YAML into RootProperties, resolves ${...} placeholders
+    (not only models.*) and applies environment overrides.
+    This version resolves dotted paths like ${python.application.name}
+    and ${server.port} by looking them up in the YAML structure.
     """
 
     ENV_PREFIX: str = ""
-    PLACEHOLDER_RE = re.compile(r"\$\{models\.([^}]+)\}")
+    # general placeholder matcher: ${some.path.here}
+    PLACEHOLDER_RE = re.compile(r"\$\{([^}]+)\}")
 
     def __init__(self, path: Optional[str] = None):
         start_total = time.perf_counter()
@@ -64,28 +66,15 @@ class ConfigLoader:
             logger.debug("ConfigLoader: file read took %.3f sec", time.perf_counter() - t1)
 
             # -----------------------------
-            # 3️⃣ Extract models and replace placeholders
+            # 3️⃣ Resolve placeholders iteratively
             # -----------------------------
             t2 = time.perf_counter()
             try:
-                parsed = yaml.safe_load(raw_text) or {}
-                logger.debug("ConfigLoader: top-level keys after first parse: %s", list(parsed.keys()))
-            except yaml.YAMLError as e:
-                logger.exception("ConfigLoader: YAML parse error (initial)")
-                raise RuntimeError(f"Failed to parse YAML config: {e}") from e
-
-            models_dict = parsed.get("models", {}) or {}
-            logger.debug("ConfigLoader: models section keys: %s", list(models_dict.keys()))
-
-            def _replace(match: re.Match) -> str:
-                key = match.group(1)
-                if key not in models_dict or models_dict[key] is None:
-                    logger.error("ConfigLoader: placeholder %s not found in models section", match.group(0))
-                    raise KeyError(f"Placeholder ${'{models.' + key + '}'} not found in models section.")
-                return str(models_dict[key])
-
-            replaced_text = self.PLACEHOLDER_RE.sub(_replace, raw_text)
-            logger.debug("ConfigLoader: placeholder replacement done (replaced_text length=%d)", len(replaced_text))
+                replaced_text = self._resolve_placeholders_iterative(raw_text)
+                logger.debug("ConfigLoader: placeholder replacement done (replaced_text length=%d)", len(replaced_text))
+            except Exception as e:
+                logger.exception("ConfigLoader: failed during placeholder replacement")
+                raise
             logger.debug("ConfigLoader: placeholder replacement took %.3f sec", time.perf_counter() - t2)
 
             # -----------------------------
@@ -120,7 +109,6 @@ class ConfigLoader:
                 self.config: RootProperties = RootProperties(**final_raw)
             except ValidationError as e:
                 logger.exception("ConfigLoader: pydantic validation error")
-                # log the validation details as well
                 try:
                     logger.debug("ConfigLoader: validation errors: %s", e.errors())
                 except Exception:
@@ -134,10 +122,12 @@ class ConfigLoader:
             )
 
         except Exception:
-            # ensure any exception is logged with full stacktrace
             logger.exception("ConfigLoader: initialization FAILED")
             raise
 
+    # -----------------------------
+    # Helper: robustly create nested dict keys
+    # -----------------------------
     @staticmethod
     def _set_in_dict_robust(d: Dict[str, Any], keys: Iterable[str], value: Any) -> None:
         cur = d
@@ -150,11 +140,10 @@ class ConfigLoader:
                     cur[k] = {}
                 cur = cur[k]
 
+    # -----------------------------
+    # Apply env overrides
+    # -----------------------------
     def _apply_env_overrides(self, data: Dict[str, Any]) -> int:
-        """
-        Iterate environment variables and apply overrides to `data`.
-        Returns number of overrides applied.
-        """
         env_items = os.environ.items()
         applied = 0
         for raw_k, raw_v in env_items:
@@ -190,7 +179,74 @@ class ConfigLoader:
         return applied
 
     # -----------------------------
-    # 🔍 Default path finder (unchanged but logged)
+    # Lookup dotted path in dict (e.g. "python.application.name")
+    # -----------------------------
+    @staticmethod
+    def _lookup_path(data: Dict[str, Any], dotted_path: str) -> Any:
+        parts = dotted_path.split(".")
+        cur: Any = data
+        for p in parts:
+            if isinstance(cur, dict) and p in cur:
+                cur = cur[p]
+            else:
+                raise KeyError(f"Path '{dotted_path}' not found in configuration.")
+        return cur
+
+    # -----------------------------
+    # Iterative resolver for ${...} placeholders
+    # -----------------------------
+    def _resolve_placeholders_iterative(self, raw_text: str, max_iters: int = 10) -> str:
+        """
+        Repeatedly parse YAML and replace ${a.b.c} by looking up a.b.c in the
+        currently-parsed tree. Iterate because replacements may expose new placeholders.
+        Raises KeyError if a placeholder cannot be resolved.
+        """
+        text = raw_text
+        for iter_no in range(max_iters):
+            if not self.PLACEHOLDER_RE.search(text):
+                # no placeholders left
+                logger.debug("No placeholders found on iteration %d", iter_no)
+                break
+
+            parsed = yaml.safe_load(text) or {}
+            # replacement function uses parsed snapshot
+            def _repl(m: re.Match) -> str:
+                key = m.group(1).strip()
+                try:
+                    val = self._lookup_path(parsed, key)
+                    # convert non-str to str for insertion
+                    return str(val)
+                except KeyError:
+                    logger.error("Placeholder %s not found in config during replacement (iteration %d)", m.group(0), iter_no)
+                    # keep original behavior: fail fast so misconfigurations are visible
+                    raise KeyError(f"Placeholder ${{{key}}} not found in configuration.")
+
+            try:
+                new_text = self.PLACEHOLDER_RE.sub(_repl, text)
+            except KeyError:
+                # bubble up so caller logs and fails
+                raise
+            if new_text == text:
+                # nothing changed -> stop
+                logger.debug("Placeholder replacement made no change on iteration %d", iter_no)
+                break
+            text = new_text
+            logger.debug("Placeholder replacement completed iteration %d", iter_no)
+
+        else:
+            # reached max iterations
+            logger.warning("Reached max placeholder resolution iterations (%d). Some placeholders may remain.", max_iters)
+
+        # final sanity check: if placeholders remain, raise
+        if self.PLACEHOLDER_RE.search(text):
+            found = self.PLACEHOLDER_RE.findall(text)
+            logger.error("Unresolved placeholders after resolution: %s", found)
+            raise RuntimeError(f"Unresolved placeholders after {max_iters} iterations: {found}")
+
+        return text
+
+    # -----------------------------
+    # Default path finder (unchanged)
     # -----------------------------
     def _find_default_config_path(self) -> str:
         current = Path(__file__).resolve()
