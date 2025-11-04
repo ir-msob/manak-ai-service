@@ -18,7 +18,7 @@ public record ToolInvocationAdapter(String toolId, ToolInvoker toolInvoker) {
     /**
      * Constructs a new ToolHandler with the specified tool ID and invoker.
      *
-     * @param toolId  the unique identifier for the tool, must not be null
+     * @param toolId      the unique identifier for the tool, must not be null
      * @param toolInvoker the invoker that will execute the tool, must not be null
      * @throws NullPointerException if toolId or invoker is null
      */

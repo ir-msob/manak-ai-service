@@ -2,7 +2,6 @@ package ir.msob.manak.aiagent.ai;
 
 import ir.msob.jima.core.commons.logger.Logger;
 import ir.msob.jima.core.commons.logger.LoggerFactory;
-import ir.msob.jima.core.commons.operation.OperationsStatus;
 import ir.msob.manak.core.model.jima.security.User;
 import ir.msob.manak.core.service.jima.security.UserService;
 import ir.msob.manak.domain.model.aiagent.chat.ChatRequest;

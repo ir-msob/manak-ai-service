@@ -13,7 +13,8 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
-public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata toolMetadata, ToolInvocationAdapter toolInvocationAdapter,
+public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata toolMetadata,
+                                   ToolInvocationAdapter toolInvocationAdapter,
                                    ObjectMapper objectMapper) implements ToolCallback {
     private static final Logger log = LoggerFactory.getLogger(AdaptiveToolCallback.class);
 

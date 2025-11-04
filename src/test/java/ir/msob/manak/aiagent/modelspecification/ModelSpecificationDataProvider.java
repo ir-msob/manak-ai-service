@@ -31,6 +31,7 @@ public class ModelSpecificationDataProvider extends DomainCrudDataProvider<Model
 
     private static ModelSpecificationDto newDto;
     private static ModelSpecificationDto newMandatoryDto;
+
     protected ModelSpecificationDataProvider(BaseIdService idService, ObjectMapper objectMapper, ModelSpecificationService service) {
         super(idService, objectMapper, service);
     }
