@@ -1,5 +1,24 @@
+import uuid
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
+
+
+# ===============================
+# Eureka Section
+# ===============================
+class EurekaClientProperties(BaseModel):
+    service_url: Dict[str, str]
+
+
+class EurekaInstanceProperties(BaseModel):
+    appname: str
+    instance_id: str
+    prefer_ip_address: bool
+
+
+class EurekaProperties(BaseModel):
+    client: EurekaClientProperties
+    instance: EurekaInstanceProperties
 
 
 # ===============================
@@ -71,6 +90,7 @@ class PythonProperties(BaseModel):
     application: PythonApplicationProperties
     profiles: PythonProfilesProperties
     security: Optional[SecurityProperties] = None
+    eureka: Optional[EurekaProperties] = None
 
 
 # ===============================

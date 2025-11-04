@@ -26,6 +26,14 @@ python:
             client_authentication_method: client_secret_basic
             scope:
               - openid
+  eureka:
+    client:
+      service_url:
+        default_zone: http://localhost:8761/eureka/
+    instance:
+      appname: ${python.application.name}
+      instance_id: ${python.application.name}:${server.port}
+      prefer_ip_address: true
 milvus:
   uri: "http://localhost:19530"
 

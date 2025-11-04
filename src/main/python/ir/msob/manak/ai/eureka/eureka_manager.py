@@ -30,7 +30,7 @@ class EurekaServiceManager:
 
         try:
             eureka_config = self.config.python.eureka
-            service_url = eureka_config.client.service_url.get("defaultZone", "")
+            service_url = eureka_config.client.service_url.get("default_zone", "")
 
             self.logger.debug(f"Eureka config: {eureka_config}")
             self.logger.debug(f"Service URL: {service_url}")
@@ -51,8 +51,8 @@ class EurekaServiceManager:
                 renewal_interval_in_secs=30,
                 duration_in_secs=90,
                 # Add more configuration for better debugging
-                vip_address=eureka_config.instance.appname,
-                host_name=eureka_config.instance.hostname or "localhost",
+                # vip_address=eureka_config.instance.appname,
+                instance_host= "localhost",
                 data_center_name="MyOwn"
             )
 
