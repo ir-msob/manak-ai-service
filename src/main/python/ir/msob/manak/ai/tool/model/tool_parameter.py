@@ -19,7 +19,7 @@ class ToolParameter(ResponseModel):
         OBJECT = "OBJECT"
         ARRAY = "ARRAY"
 
-    type: ToolParameterType = Field(
+    type: str = Field(
         ...,
         description=(
             "The data type of the parameter. Supported values: STRING, NUMBER, BOOLEAN, OBJECT, ARRAY.\n"
@@ -36,7 +36,7 @@ class ToolParameter(ResponseModel):
     )
 
     default_value: Optional[Union[str, int, float, bool, dict, list]] = Field(
-        None,
+        default=None,
         description="The default value to use when the parameter is not provided.",
     )
 
@@ -52,12 +52,12 @@ class ToolParameter(ResponseModel):
     )
 
     required: bool = Field(
-        False,
+        default=False,
         description="Indicates whether this parameter is required in the context where it is used.",
     )
 
     items: Optional[ToolParameter] = Field(
-        None,
+        default=None,
         description=(
             "Describes the structure or type of each item in an array.\n"
             "Used only when type = 'ARRAY'.\n"
@@ -74,16 +74,16 @@ class ToolParameter(ResponseModel):
         ),
     )
 
-    minimum: Optional[int] = Field(
-        None,
+    minimum: Optional[Union[int, float]] = Field(
+        default=None,
         description=(
             "The minimum numeric value allowed for NUMBER type parameters.\n"
             "Example: type = 'NUMBER', minimum = 0"
         ),
     )
 
-    maximum: Optional[int] = Field(
-        None,
+    maximum: Optional[Union[int, float]] = Field(
+        default=None,
         description=(
             "The maximum numeric value allowed for NUMBER type parameters.\n"
             "Example: type = 'NUMBER', maximum = 100"
@@ -91,7 +91,7 @@ class ToolParameter(ResponseModel):
     )
 
     min_length: Optional[int] = Field(
-        None,
+        default=None,
         description=(
             "The minimum length of the value for STRING type parameters.\n"
             "Example: type = 'STRING', minLength = 3"
@@ -99,7 +99,7 @@ class ToolParameter(ResponseModel):
     )
 
     max_length: Optional[int] = Field(
-        None,
+        default=None,
         description=(
             "The maximum length of the value for STRING type parameters.\n"
             "Example: type = 'STRING', maxLength = 255"
@@ -107,7 +107,7 @@ class ToolParameter(ResponseModel):
     )
 
     pattern: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "A regular expression pattern the STRING value must match.\n"
             "Example: pattern = '^[A-Za-z0-9_-]+$'"
@@ -122,8 +122,8 @@ class ToolParameter(ResponseModel):
         ),
     )
 
-    nullable: Optional[bool] = Field(
-        False,
+    nullable: bool = Field(
+        default=False,
         description="Indicates whether the parameter value can be null.",
     )
 
