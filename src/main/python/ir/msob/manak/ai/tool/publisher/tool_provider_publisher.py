@@ -1,12 +1,16 @@
 import logging
 
+from src.main.python.ir.msob.manak.ai.channel.channel_message import ChannelMessage
+from src.main.python.ir.msob.manak.ai.channel.dto_message import DtoMessage
 from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
+from src.main.python.ir.msob.manak.ai.domain.user import SYSTEM_USER
 from src.main.python.ir.msob.manak.ai.tool.tool_provider_handler import ToolProviderHandler
 from src.main.python.ir.msob.manak.ai.tool.model.tool_provider_dto import ToolProviderDto
 from src.main.python.ir.msob.manak.ai.kafka.kafka_client import KafkaAsyncClient
 from src.main.python.ir.msob.manak.ai.tool.tool_descriptors_factory import get_tool_descriptors
 
 logger = logging.getLogger(__name__)
+
 
 class ToolProviderPublisher:
     def __init__(self):
@@ -20,10 +24,13 @@ class ToolProviderPublisher:
             provider: ToolProviderDto = self.tool_provider_handler.get_tool_provider()
             provider.tools = get_tool_descriptors()
 
+            message_dto: DtoMessage = DtoMessage(dto=provider)
+            channel_message: ChannelMessage = ChannelMessage(data=message_dto,user=SYSTEM_USER)
+
             await self.kafka_client.send(
                 topic=ConfigConfiguration.get_properties().tool.tool_provider_topic,
                 key=provider.name,
-                value=provider.model_dump()
+                value=channel_message.model_dump(by_alias=True)
             )
             logger.info(f"✅ ToolProvider '{provider.name}' published with {len(provider.tools)} tools.")
         except Exception as e:

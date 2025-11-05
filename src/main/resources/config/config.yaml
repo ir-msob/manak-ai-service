@@ -52,7 +52,7 @@ kafka:
     bootstrap_servers: localhost:9092
 
 tool:
-  tool_provider_topic: "tool-provider_v1_tool-provider_save"
+  tool_provider_topic: "toolhub_v1_tool-provider_save"
 
 models:
   embedding_model: "/home/yaqub/WorkspaceData/huggingface/models/all-MiniLM-L6-v2"

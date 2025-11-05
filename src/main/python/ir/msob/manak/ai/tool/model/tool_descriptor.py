@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 
+from src.main.python.ir.msob.manak.ai.base.response_model import ResponseModel
 from src.main.python.ir.msob.manak.ai.tool.model.request_schema import RequestSchema
 from src.main.python.ir.msob.manak.ai.tool.model.response_schema import ResponseSchema
 
 # ---------------------------
 # Tool Descriptor
 # ---------------------------
-class ToolDescriptor(BaseModel):
+class ToolDescriptor(ResponseModel):
     name: str
     key: str
     description: str

@@ -34,7 +34,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Query parameters for searching documents",
         required=True,
         properties={
-            "document_ids": ToolParameter(
+            "documentIds": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="Specific document IDs to search within (optional)",
                 required=False,
@@ -43,7 +43,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                     description="Unique document identifier",
                     examples=["doc_12345", "doc_67890"]
                 ),
-                examples=[["doc_12345", "doc_67890"]]
+                examples=["doc_12345", "doc_67890"]
             ),
             "query": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
@@ -52,7 +52,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 examples=["machine learning algorithms", "python programming basics"],
                 min_length=1
             ),
-            "top_k": ToolParameter(
+            "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Number of top results to return",
                 required=True,
@@ -71,7 +71,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Individual document overview result",
         required=True,
         properties={
-            "document_id": ToolParameter(
+            "documentId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the document",
                 required=True,
@@ -98,7 +98,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Complete overview response for document search",
         required=True,
         properties={
-            "document_ids": ToolParameter(
+            "documentIds": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="List of document IDs that were searched",
                 required=False,
@@ -114,7 +114,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 required=True,
                 examples=["machine learning algorithms"]
             ),
-            "top_k": ToolParameter(
+            "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of results",
                 required=True,
@@ -125,13 +125,13 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 description="List of document overviews matching the query",
                 required=True,
                 items=doc_overview_item_param,
-                examples=[[
+                examples=[
                     {
-                        "document_id": "doc_12345",
+                        "documentId": "doc_12345",
                         "content": "Machine learning overview...",
                         "meta": {"category": "AI"}
                     }
-                ]]
+                ]
             )
         }
     )
@@ -163,7 +163,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Individual document chunk with detailed content",
         required=True,
         properties={
-            "document_id": ToolParameter(
+            "documentId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the source document",
                 required=True,
@@ -189,7 +189,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Detailed chunk-level response for document search",
         required=True,
         properties={
-            "document_ids": ToolParameter(
+            "documentIds": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="List of document IDs that were searched",
                 required=False,
@@ -205,19 +205,19 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 required=True,
                 examples=["neural network applications"]
             ),
-            "top_k": ToolParameter(
+            "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of chunk results",
                 required=True,
                 examples=[5, 10]
             ),
-            "top_chunks": ToolParameter(
+            "topChunks": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="List of top matching document chunks",
                 required=True,
                 items=doc_chunk_item_param
             ),
-            "final_summary": ToolParameter(
+            "finalSummary": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Consolidated summary of all top chunks",
                 required=False,
@@ -254,7 +254,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Query parameters for searching repositories",
         required=True,
         properties={
-            "repository_ids": ToolParameter(
+            "repositoryIds": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="Specific repository IDs to search within (optional)",
                 required=False,
@@ -263,7 +263,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                     description="Unique repository identifier",
                     examples=["repo_12345", "repo_67890"]
                 ),
-                examples=[["repo_12345", "repo_67890"]]
+                examples=["repo_12345", "repo_67890"]
             ),
             "query": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
@@ -272,7 +272,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 examples=["authentication middleware", "database connection pool"],
                 min_length=1
             ),
-            "top_k": ToolParameter(
+            "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Number of top results to return",
                 required=True,
@@ -291,7 +291,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Individual repository overview result",
         required=True,
         properties={
-            "repository_id": ToolParameter(
+            "repositoryId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the repository",
                 required=True,
@@ -309,7 +309,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 required=False,
                 examples=["main", "develop", "feature/auth-implementation"]
             ),
-            "document_id": ToolParameter(
+            "documentId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the document within repository",
                 required=False,
@@ -350,7 +350,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Complete overview response for repository search",
         required=True,
         properties={
-            "repository_ids": ToolParameter(
+            "repositoryIds": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="List of repository IDs that were searched",
                 required=False,
@@ -366,7 +366,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 required=True,
                 examples=["authentication middleware"]
             ),
-            "top_k": ToolParameter(
+            "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of results",
                 required=True,
@@ -408,7 +408,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Individual repository chunk with file and position details",
         required=True,
         properties={
-            "repository_id": ToolParameter(
+            "repositoryId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the repository",
                 required=True,
@@ -426,7 +426,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 required=False,
                 examples=["main", "develop"]
             ),
-            "document_id": ToolParameter(
+            "documentId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the document",
                 required=False,
@@ -453,26 +453,26 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 minimum=0.0,
                 maximum=1.0
             ),
-            "file_path": ToolParameter(
+            "filePath": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Full file path within the repository",
                 required=False,
                 examples=["src/auth/middleware.py", "docs/authentication.md"]
             ),
-            "file_name": ToolParameter(
+            "fileName": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Name of the file",
                 required=False,
                 examples=["middleware.py", "authentication.md"]
             ),
-            "chunk_index": ToolParameter(
+            "chunkIndex": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Index position of this chunk within the file",
                 required=False,
                 examples=[0, 1, 2],
                 minimum=0
             ),
-            "total_chunks": ToolParameter(
+            "totalChunks": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Total number of chunks in the file",
                 required=False,
@@ -494,7 +494,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Detailed chunk-level response for repository search",
         required=True,
         properties={
-            "repository_ids": ToolParameter(
+            "repositoryIds": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="List of repository IDs that were searched",
                 required=False,
@@ -510,19 +510,19 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 required=True,
                 examples=["JWT authentication middleware"]
             ),
-            "top_k": ToolParameter(
+            "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of chunk results",
                 required=True,
                 examples=[5, 10]
             ),
-            "top_chunks": ToolParameter(
+            "topChunks": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="List of top matching repository chunks",
                 required=True,
                 items=repo_chunk_item_param
             ),
-            "final_summary": ToolParameter(
+            "finalSummary": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Consolidated summary of repository search results",
                 required=False,
