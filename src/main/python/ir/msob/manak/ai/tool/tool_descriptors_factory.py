@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from src.main.python.ir.msob.manak.ai.tool.model.request_schema import RequestSchema
 from src.main.python.ir.msob.manak.ai.tool.model.response_schema import ResponseSchema
@@ -29,39 +29,34 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
     # -----------------------
     # Document Query Request Parameter
     # -----------------------
-    doc_query_request_param = ToolParameter(
-        type=ToolParameter.ToolParameterType.OBJECT,
-        description="Query parameters for searching documents",
-        required=True,
-        properties={
-            "documentIds": ToolParameter(
-                type=ToolParameter.ToolParameterType.ARRAY,
-                description="Specific document IDs to search within (optional)",
-                required=False,
-                items=ToolParameter(
-                    type=ToolParameter.ToolParameterType.STRING,
-                    description="Unique document identifier",
-                    examples=["doc_12345", "doc_67890"]
-                ),
+    doc_query_request_param: Dict[str, ToolParameter] = {
+        "documentIds": ToolParameter(
+            type=ToolParameter.ToolParameterType.ARRAY,
+            description="Specific document IDs to search within (optional)",
+            required=False,
+            items=ToolParameter(
+                type=ToolParameter.ToolParameterType.STRING,
+                description="Unique document identifier",
                 examples=["doc_12345", "doc_67890"]
             ),
-            "query": ToolParameter(
-                type=ToolParameter.ToolParameterType.STRING,
-                description="Search query string",
-                required=True,
-                examples=["machine learning algorithms", "python programming basics"],
-                min_length=1
-            ),
-            "topK": ToolParameter(
-                type=ToolParameter.ToolParameterType.NUMBER,
-                description="Number of top results to return",
-                required=True,
-                examples=[5, 10, 20],
-                minimum=1,
-                maximum=100
-            )
-        }
-    )
+            examples=["doc_12345", "doc_67890"]
+        ),
+        "query": ToolParameter(
+            type=ToolParameter.ToolParameterType.STRING,
+            description="Search query string",
+            required=True,
+            examples=["machine learning algorithms", "python programming basics"],
+            min_length=1
+        ),
+        "topK": ToolParameter(
+            type=ToolParameter.ToolParameterType.NUMBER,
+            description="Number of top results to return",
+            required=True,
+            examples=[5, 10, 20],
+            minimum=1,
+            maximum=100
+        )
+    }
 
     # -----------------------
     # Document Overview Response Items
@@ -145,7 +140,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Returns overview data for requested documents based on query parameters.",
         input_schema=RequestSchema(
             tool_id=tool_id_param,
-            params={"queryRequest": doc_query_request_param}
+            params=doc_query_request_param
         ),
         output_schema=ResponseSchema(
             tool_id=tool_id_param,
@@ -236,7 +231,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Returns detailed chunk-level query results for specified documents.",
         input_schema=RequestSchema(
             tool_id=tool_id_param,
-            params={"queryRequest": doc_query_request_param}
+            params=doc_query_request_param
         ),
         output_schema=ResponseSchema(
             tool_id=tool_id_param,
@@ -249,39 +244,34 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
     # -----------------------
     # Repository Query Request Parameter
     # -----------------------
-    repo_query_request_param = ToolParameter(
-        type=ToolParameter.ToolParameterType.OBJECT,
-        description="Query parameters for searching repositories",
-        required=True,
-        properties={
-            "repositoryIds": ToolParameter(
-                type=ToolParameter.ToolParameterType.ARRAY,
-                description="Specific repository IDs to search within (optional)",
-                required=False,
-                items=ToolParameter(
-                    type=ToolParameter.ToolParameterType.STRING,
-                    description="Unique repository identifier",
-                    examples=["repo_12345", "repo_67890"]
-                ),
+    repo_query_request_param: Dict[str, ToolParameter] = {
+        "repositoryIds": ToolParameter(
+            type=ToolParameter.ToolParameterType.ARRAY,
+            description="Specific repository IDs to search within (optional)",
+            required=False,
+            items=ToolParameter(
+                type=ToolParameter.ToolParameterType.STRING,
+                description="Unique repository identifier",
                 examples=["repo_12345", "repo_67890"]
             ),
-            "query": ToolParameter(
-                type=ToolParameter.ToolParameterType.STRING,
-                description="Search query for repository content",
-                required=True,
-                examples=["authentication middleware", "database connection pool"],
-                min_length=1
-            ),
-            "topK": ToolParameter(
-                type=ToolParameter.ToolParameterType.NUMBER,
-                description="Number of top results to return",
-                required=True,
-                examples=[5, 10, 20],
-                minimum=1,
-                maximum=100
-            )
-        }
-    )
+            examples=["repo_12345", "repo_67890"]
+        ),
+        "query": ToolParameter(
+            type=ToolParameter.ToolParameterType.STRING,
+            description="Search query for repository content",
+            required=True,
+            examples=["authentication middleware", "database connection pool"],
+            min_length=1
+        ),
+        "topK": ToolParameter(
+            type=ToolParameter.ToolParameterType.NUMBER,
+            description="Number of top results to return",
+            required=True,
+            examples=[5, 10, 20],
+            minimum=1,
+            maximum=100
+        )
+    }
 
     # -----------------------
     # Repository Overview Response Items
@@ -390,7 +380,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Fetches summarized information about repositories based on a search query.",
         input_schema=RequestSchema(
             tool_id=tool_id_param,
-            params={"queryRequest": repo_query_request_param}
+            params=repo_query_request_param
         ),
         output_schema=ResponseSchema(
             tool_id=tool_id_param,
@@ -541,7 +531,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Retrieves chunk-level analysis results for the given repositories.",
         input_schema=RequestSchema(
             tool_id=tool_id_param,
-            params={"queryRequest": repo_query_request_param}
+            params=repo_query_request_param
         ),
         output_schema=ResponseSchema(
             tool_id=tool_id_param,
