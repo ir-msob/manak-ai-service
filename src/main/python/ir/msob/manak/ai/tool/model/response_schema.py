@@ -7,5 +7,5 @@ from src.main.python.ir.msob.manak.ai.tool.model.tool_parameter import ToolParam
 # ---------------------------
 class ResponseSchema(BaseModel):
     tool_id: ToolParameter
-    res: Dict[str, ToolParameter] = Field(default_factory=dict)
-    error: Optional[ToolParameter] = None
+    res: ToolParameter
+    error: ToolParameter

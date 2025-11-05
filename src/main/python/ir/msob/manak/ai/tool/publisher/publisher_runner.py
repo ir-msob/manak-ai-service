@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from src.main.python.ir.msob.manak.ai.tool.tool_provider_publisher import ToolProviderPublisher
+from src.main.python.ir.msob.manak.ai.tool.publisher.tool_provider_publisher import ToolProviderPublisher
 
 
 async def start_tool_provider_publisher():

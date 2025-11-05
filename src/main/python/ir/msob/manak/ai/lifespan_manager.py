@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from src.main.python.ir.msob.manak.ai.tool.publisher_runner import start_tool_provider_publisher
+from src.main.python.ir.msob.manak.ai.tool.publisher.publisher_runner import start_tool_provider_publisher
 from src.main.python.ir.msob.manak.ai.eureka.eureka_manager import EurekaServiceManager
 
 

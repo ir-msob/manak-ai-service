@@ -1,9 +1,7 @@
-from typing import Dict, Optional, Union
-
+from __future__ import annotations
+from typing import Dict, List, Optional, Union
 from pydantic import Field
-
 from src.main.python.ir.msob.manak.ai.base.response_model import ResponseModel
-
 
 class ToolParameter(ResponseModel):
     """
@@ -14,48 +12,120 @@ class ToolParameter(ResponseModel):
     can be understood both by humans and AI systems.
     """
 
-    type: str = Field(..., description=(
-        "The data type of the parameter. Supported values: string, number, boolean, object, array."
-        "Example:"
-        "- 'string' → A single string value"
-        "- 'array' → A list of values (defined by 'items')"
-        "- 'object' → A structured value (defined by 'properties')"
-    ))
+    class ToolParameterType(str):
+        STRING = "STRING"
+        NUMBER = "NUMBER"
+        BOOLEAN = "BOOLEAN"
+        OBJECT = "OBJECT"
+        ARRAY = "ARRAY"
 
-    description: str = Field(..., description=(
-        "A human-readable description of what this parameter represents."
-        "Helps both developers and AI models understand the semantic meaning of the field."
-    ))
-
-    default_value: Optional[Union[str, int, float, bool, dict, list]] = Field(
-        None, description="The default value to use when the parameter is not provided."
+    type: ToolParameterType = Field(
+        ...,
+        description=(
+            "The data type of the parameter. Supported values: STRING, NUMBER, BOOLEAN, OBJECT, ARRAY.\n"
+            "Example:\n"
+            "- 'STRING' → A single string value\n"
+            "- 'ARRAY' → A list of values (defined by 'items')\n"
+            "- 'OBJECT' → A structured value (defined by 'properties')"
+        ),
     )
 
-    example: Optional[Union[str, int, float, bool, dict, list]] = Field(
-        None, description="An example value illustrating how this parameter might look in real data."
+    description: str = Field(
+        ...,
+        description="A human-readable description of what this parameter represents.",
+    )
+
+    default_value: Optional[Union[str, int, float, bool, dict, list]] = Field(
+        None,
+        description="The default value to use when the parameter is not provided.",
+    )
+
+    examples: Optional[List[Union[str, int, float, bool, dict, list]]] = Field(
+        default_factory=list,
+        description=(
+            "A list of example values that illustrate how this parameter might appear in actual data.\n"
+            "Examples:\n"
+            "- ['John Doe']\n"
+            "- [1, 2, 3]\n"
+            "- ['application/json', 'text/plain']"
+        ),
     )
 
     required: bool = Field(
-        False, description="Indicates whether this parameter is required in the context where it is used."
+        False,
+        description="Indicates whether this parameter is required in the context where it is used.",
     )
 
-    items: Optional['ToolParameter'] = Field(
-        None, description=(
-            "Describes the structure or type of each item in an array."
-            "Used only when type = 'array'. Example:"
-            "type = 'array', items = { type = 'string' } represents a list of strings."
-        )
+    items: Optional[ToolParameter] = Field(
+        None,
+        description=(
+            "Describes the structure or type of each item in an array.\n"
+            "Used only when type = 'ARRAY'.\n"
+            "Example:\n"
+            "type = 'ARRAY', items = { type = 'STRING' } → list of strings."
+        ),
     )
 
-    properties: Optional[Dict[str, 'ToolParameter']] = Field(
-        default_factory=dict, description=(
-            "Describes the properties of an object when type = 'object'."
-            "Each key in this map represents a field name, and the corresponding value "
-            "is another ToolParameter defining that field's structure."
-            "Example:"
-            "type = 'object', properties = {"
-            "  'name': { type: 'string' },"
-            "  'age': { type: 'number' }"
-            "}"
-        )
+    properties: Optional[Dict[str, ToolParameter]] = Field(
+        default_factory=dict,
+        description=(
+            "Describes the properties of an object when type = 'OBJECT'.\n"
+            "Each key represents a field name and maps to a ToolParameter describing it."
+        ),
     )
+
+    minimum: Optional[int] = Field(
+        None,
+        description=(
+            "The minimum numeric value allowed for NUMBER type parameters.\n"
+            "Example: type = 'NUMBER', minimum = 0"
+        ),
+    )
+
+    maximum: Optional[int] = Field(
+        None,
+        description=(
+            "The maximum numeric value allowed for NUMBER type parameters.\n"
+            "Example: type = 'NUMBER', maximum = 100"
+        ),
+    )
+
+    min_length: Optional[int] = Field(
+        None,
+        description=(
+            "The minimum length of the value for STRING type parameters.\n"
+            "Example: type = 'STRING', minLength = 3"
+        ),
+    )
+
+    max_length: Optional[int] = Field(
+        None,
+        description=(
+            "The maximum length of the value for STRING type parameters.\n"
+            "Example: type = 'STRING', maxLength = 255"
+        ),
+    )
+
+    pattern: Optional[str] = Field(
+        None,
+        description=(
+            "A regular expression pattern the STRING value must match.\n"
+            "Example: pattern = '^[A-Za-z0-9_-]+$'"
+        ),
+    )
+
+    enum_values: Optional[List[Union[str, int, float, bool]]] = Field(
+        default_factory=list,
+        description=(
+            "A list of allowed constant values for the parameter (similar to an enum).\n"
+            "Example: enumValues = ['ASC', 'DESC']"
+        ),
+    )
+
+    nullable: Optional[bool] = Field(
+        False,
+        description="Indicates whether the parameter value can be null.",
+    )
+
+
+ToolParameter.model_rebuild()  # Required for self-referencing fields

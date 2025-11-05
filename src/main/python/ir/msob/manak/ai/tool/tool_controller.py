@@ -24,6 +24,7 @@ def handle_exceptions(func):
             except Exception as e:
                 logger.exception("❌ Unexpected error in %s: %s", func.__name__, e)
                 raise HTTPException(status_code=500, detail=str(e))
+
         return wrapper
     else:
         @wraps(func)
@@ -35,12 +36,13 @@ def handle_exceptions(func):
             except Exception as e:
                 logger.exception("❌ Unexpected error in %s: %s", func.__name__, e)
                 raise HTTPException(status_code=500, detail=str(e))
+
         return wrapper
 
 
 @router.post("/tool/invoke", response_model=InvokeResponse)
 @handle_exceptions
-def query_text(invoke_request: InvokeRequest):
+def invoke(invoke_request: InvokeRequest) -> InvokeResponse:
     logger.info("🔧 Tool invoke request received: tool_id=%s", invoke_request.tool_id)
 
     if not invoke_request.tool_id:

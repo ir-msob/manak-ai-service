@@ -1,7 +1,7 @@
 import logging
 
 from src.main.python.ir.msob.manak.ai.config.config_configuration import ConfigConfiguration
-from src.main.python.ir.msob.manak.ai.tool.model.tool_provider_handler import ToolProviderHandler
+from src.main.python.ir.msob.manak.ai.tool.tool_provider_handler import ToolProviderHandler
 from src.main.python.ir.msob.manak.ai.tool.model.tool_provider_dto import ToolProviderDto
 from src.main.python.ir.msob.manak.ai.kafka.kafka_client import KafkaAsyncClient
 from src.main.python.ir.msob.manak.ai.tool.tool_descriptors_factory import get_tool_descriptors
@@ -23,7 +23,7 @@ class ToolProviderPublisher:
             await self.kafka_client.send(
                 topic=ConfigConfiguration.get_properties().tool.tool_provider_topic,
                 key=provider.name,
-                value=provider.dict()
+                value=provider.model_dump()
             )
             logger.info(f"✅ ToolProvider '{provider.name}' published with {len(provider.tools)} tools.")
         except Exception as e:

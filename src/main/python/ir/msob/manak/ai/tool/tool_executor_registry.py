@@ -5,7 +5,7 @@ from src.main.python.ir.msob.manak.ai.tool.model.invoke_request import InvokeReq
 logger = logging.getLogger(__name__)
 
 # ---------------------- Tool Registry ----------------------
-class ToolRegistry:
+class ToolExecutorRegistry:
     """Registry for dynamic tools."""
 
     def __init__(self):
@@ -23,7 +23,7 @@ class ToolRegistry:
         return self._registry.get(tool_id)
 
 # Singleton instance
-tool_registry = ToolRegistry()
+tool_executor_registry = ToolExecutorRegistry()
 
 
 # ---------------------- Document Tools ----------------------
@@ -31,13 +31,13 @@ from src.main.python.ir.msob.manak.ai.document.model.document_query_request impo
 from src.main.python.ir.msob.manak.ai.document.model.document_overview_response import DocumentOverviewResponse
 from src.main.python.ir.msob.manak.ai.document.model.document_chunk_response import DocumentChunkResponse
 
-@tool_registry.register("documentOverviewQuery")
+@tool_executor_registry.register("documentOverviewQuery")
 def document_overview_query(service, invoke_request: InvokeRequest) -> DocumentOverviewResponse:
     query_data = invoke_request.params.get("queryRequest")
     query_request = query_data if isinstance(query_data, DocumentQueryRequest) else DocumentQueryRequest.model_validate(query_data)
     return service.document_service.overview_query(query_request)
 
-@tool_registry.register("documentChunkQuery")
+@tool_executor_registry.register("documentChunkQuery")
 def document_chunk_query(service, invoke_request: InvokeRequest) -> DocumentChunkResponse:
     query_data = invoke_request.params.get("queryRequest")
     query_request = query_data if isinstance(query_data, DocumentQueryRequest) else DocumentQueryRequest.model_validate(query_data)
@@ -49,13 +49,13 @@ from src.main.python.ir.msob.manak.ai.repository.model.repository_query_request 
 from src.main.python.ir.msob.manak.ai.repository.model.repository_overview_response import RepositoryOverviewResponse
 from src.main.python.ir.msob.manak.ai.repository.model.repository_chunk_response import RepositoryChunkResponse
 
-@tool_registry.register("repositoryOverviewQuery")
+@tool_executor_registry.register("repositoryOverviewQuery")
 def repository_overview_query(service, invoke_request: InvokeRequest) -> RepositoryOverviewResponse:
     query_data = invoke_request.params.get("queryRequest")
     query_request = query_data if isinstance(query_data, RepositoryQueryRequest) else RepositoryQueryRequest.model_validate(query_data)
     return service.repository_service.overview_query(query_request)
 
-@tool_registry.register("repositoryChunkQuery")
+@tool_executor_registry.register("repositoryChunkQuery")
 def repository_chunk_query(service, invoke_request: InvokeRequest) -> RepositoryChunkResponse:
     query_data = invoke_request.params.get("queryRequest")
     query_request = query_data if isinstance(query_data, RepositoryQueryRequest) else RepositoryQueryRequest.model_validate(query_data)

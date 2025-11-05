@@ -9,6 +9,6 @@ class ToolProviderHandler:
         return ToolProviderDto(
             name=ConfigConfiguration.get_properties().python.application.name,
             description=f"ToolProvider for Python Service: {ConfigConfiguration.get_properties().python.application.name}",
-            base_url=ConfigConfiguration.get_properties().python.application.base_url,
+            service_name=ConfigConfiguration.get_properties().python.application.name,
             endpoint="/api/v1/tool/invoke"
         )
