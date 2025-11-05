@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.io.Serializable;
 import java.util.Map;
 
 @Service
@@ -23,7 +22,7 @@ public class ToolInvoker {
     private final GatewayClient gatewayClient;
     private final UserService userService;
 
-    public Serializable invoke(String toolId, Map<String, Serializable> params) {
+    public Object invoke(String toolId, Map<String, Object> params) {
         try {
             InvokeRequest request = InvokeRequest.builder()
                     .toolId(toolId)
@@ -36,7 +35,7 @@ public class ToolInvoker {
                     .map(this::extractResponse)
                     .onErrorResume(e -> {
                         log.error("Error invoking tool '{}': {}", toolId, e.getMessage(), e);
-                        return Mono.just((Serializable) ToolExecutorUtil.buildErrorResponse(toolId, e));
+                        return Mono.just((Object) ToolExecutorUtil.buildErrorResponse(toolId, e));
                     })
                     .toFuture()
                     .get();
@@ -46,7 +45,7 @@ public class ToolInvoker {
         }
     }
 
-    private Serializable extractResponse(InvokeResponse response) {
+    private Object extractResponse(InvokeResponse response) {
         if (response == null) {
             return "No response received from tool.";
         }

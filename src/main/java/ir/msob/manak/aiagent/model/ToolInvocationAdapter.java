@@ -3,7 +3,6 @@ package ir.msob.manak.aiagent.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
@@ -34,10 +33,10 @@ public record ToolInvocationAdapter(String toolId, ToolInvoker toolInvoker) {
      * @param parameters the parameters for tool execution
      * @return the result of tool execution
      */
-    public Serializable handle(Map<String, Serializable> parameters) {
+    public Object handle(Map<String, Object> parameters) {
         log.debug("Handling tool execution for toolId: {}, parameters: {}", toolId, parameters);
 
-        Serializable result = toolInvoker.invoke(toolId, parameters);
+        Object result = toolInvoker.invoke(toolId, parameters);
 
         log.debug("Tool execution completed for toolId: {}", toolId);
 

@@ -5,7 +5,6 @@ import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ToolParame
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -160,13 +159,13 @@ public class ToolSchemaUtil {
         return schema;
     }
 
-    private List<Serializable> buildExampleValue(ToolParameter param) {
+    private List<Object> buildExampleValue(ToolParameter param) {
         if (param == null) return null;
 
-        List<Serializable> examples = param.getExamples();
+        List<Object> examples = param.getExamples();
         if (examples != null && !examples.isEmpty()) return examples;
 
-        Serializable def = param.getDefaultValue();
+        Object def = param.getDefaultValue();
         if (def != null) return List.of(def);
 
         return null;

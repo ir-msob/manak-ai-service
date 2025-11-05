@@ -9,7 +9,6 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
@@ -44,11 +43,11 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
         log.debug("Tool callback invoked for tool: {} with input: {}", toolDefinition.name(), toolInput);
 
         try {
-            // Parse JSON string to Map<String, Serializable>
-            Map<String, Serializable> params = parseInput(toolInput);
+            // Parse JSON string to Map<String, Object>
+            Map<String, Object> params = parseInput(toolInput);
 
             // Call tool handler
-            Serializable result = toolInvocationAdapter.handle(params);
+            Object result = toolInvocationAdapter.handle(params);
 
             // Convert result to JSON string
             return serializeResult(result);
@@ -60,20 +59,20 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
     }
 
     /**
-     * Parse JSON input string to Map<String, Serializable>
+     * Parse JSON input string to Map<String, Object>
      */
     @SneakyThrows
-    private Map<String, Serializable> parseInput(String toolInput) {
+    private Map<String, Object> parseInput(String toolInput) {
         if (toolInput == null || toolInput.trim().isEmpty()) {
             log.info("Empty input received for tool: {}, using empty parameters", toolDefinition.name());
             return Collections.emptyMap();
         }
 
         try {
-            // Use TypeReference for proper Map<String, Serializable> deserialization
-            Map<String, Serializable> params = objectMapper.readValue(
+            // Use TypeReference for proper Map<String, Object> deserialization
+            Map<String, Object> params = objectMapper.readValue(
                     toolInput,
-                    new TypeReference<Map<String, Serializable>>() {
+                    new TypeReference<Map<String, Object>>() {
                     }
             );
 
@@ -90,7 +89,7 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
      * Serialize result to JSON string
      */
     @SneakyThrows
-    private String serializeResult(Serializable result) {
+    private String serializeResult(Object result) {
         if (result == null) {
             log.info("Tool {} returned null result", toolDefinition.name());
             return "{}";
