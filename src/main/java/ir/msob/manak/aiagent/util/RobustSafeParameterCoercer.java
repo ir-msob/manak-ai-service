@@ -144,7 +144,6 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
             }
             case ARRAY -> coerceToArray(raw, def.getItems());
             case OBJECT -> coerceToObject(raw, def.getProperties());
-            default -> raw;
         };
     }
 
@@ -242,10 +241,6 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
                             list = new ArrayList<>(Arrays.asList(parts));
                         }
                     }
-                }
-                case Map<?, ?> map -> {
-                    list = new ArrayList<>();
-                    list.add(raw);
                 }
                 case null, default -> {
                     list = new ArrayList<>();
@@ -491,7 +486,6 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
             case BOOLEAN -> value instanceof Boolean;
             case ARRAY -> value instanceof List<?>;
             case OBJECT -> value instanceof Map<?, ?>;
-            default -> false;
         };
     }
 }
