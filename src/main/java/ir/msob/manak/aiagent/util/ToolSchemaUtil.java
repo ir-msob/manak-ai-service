@@ -140,7 +140,7 @@ public class ToolSchemaUtil {
         }
 
         if (toolParameter.getDescription() != null) schema.put("description", toolParameter.getDescription());
-        if (toolParameter.getExamples() != null) schema.put("examples", buildExampleValue(toolParameter));
+        if (toolParameter.getExample() != null) schema.put("example", buildExampleValue(toolParameter));
         if (toolParameter.getDefaultValue() != null) schema.put("default", toolParameter.getDefaultValue());
 
         if (toolParameter.getEnumValues() != null && !toolParameter.getEnumValues().isEmpty()) {
@@ -159,11 +159,11 @@ public class ToolSchemaUtil {
         return schema;
     }
 
-    private List<Object> buildExampleValue(ToolParameter param) {
+    private Object buildExampleValue(ToolParameter param) {
         if (param == null) return null;
 
-        List<Object> examples = param.getExamples();
-        if (examples != null && !examples.isEmpty()) return examples;
+        Object example = param.getExample();
+        if (example != null) return example;
 
         Object def = param.getDefaultValue();
         if (def != null) return List.of(def);

@@ -2,6 +2,7 @@ package ir.msob.manak.aiagent.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.manak.aiagent.client.RegistryClient;
+import ir.msob.manak.aiagent.util.RobustSafeParameterCoercer;
 import ir.msob.manak.aiagent.util.ToolSchemaUtil;
 import ir.msob.manak.core.model.jima.security.User;
 import ir.msob.manak.domain.model.aiagent.chat.ChatRequest;
@@ -97,6 +98,7 @@ public interface ModelProviderService {
         ExtendedToolMetadata metadata = createToolMetadata(toolDto);
         ToolInvocationAdapter toolInvocationAdapter = createToolHandler(toolDto);
 
+        log.debug("🧩 ToolDefinition -> name='{}', desc='{}', schema='{}'", toolDefinition.name(), toolDefinition.description(), toolDefinition.inputSchema());
         return new AdaptiveToolCallback(toolDefinition, metadata, toolInvocationAdapter, getObjectMapper());
     }
 
@@ -104,31 +106,11 @@ public interface ModelProviderService {
      * Builds a ToolDefinition describing the input schema and description.
      */
     private ToolDefinition createToolDefinition(ToolDto toolDto) {
-        String description = buildToolDescription(toolDto);
-
         return DefaultToolDefinition.builder()
                 .name(toolDto.getToolId())
-                .description(description)
+                .description(toolDto.getDescription())
                 .inputSchema(getToolSchemaUtil().toJsonSchema(toolDto.getInputSchema()))
                 .build();
-    }
-
-    /**
-     * Builds a human-readable description for the tool including example outputs.
-     */
-    private String buildToolDescription(ToolDto toolDto) {
-        StringBuilder description = new StringBuilder();
-
-        if (toolDto.getDescription() != null) {
-            description.append(toolDto.getDescription());
-        }
-
-        if (toolDto.getOutputSchema() != null) {
-            description.append("\n\nResponse format (JSON): ")
-                    .append(getToolSchemaUtil().exampleForSchema(toolDto.getOutputSchema()));
-        }
-
-        return description.toString();
     }
 
     /**
@@ -146,6 +128,6 @@ public interface ModelProviderService {
      * Creates a tool handler adapter for invocation routing.
      */
     private ToolInvocationAdapter createToolHandler(ToolDto toolDto) {
-        return new ToolInvocationAdapter(toolDto.getToolId(), getToolInvoker());
+        return new ToolInvocationAdapter(toolDto.getToolId(), getToolInvoker(), toolDto.getInputSchema(), new RobustSafeParameterCoercer(getObjectMapper()));
     }
 }
