@@ -1,8 +1,8 @@
 package ir.msob.manak.chat.client;
 
-import ir.msob.jima.core.commons.domain.DtoInfo;
 import ir.msob.jima.crud.api.restful.client.domain.DomainCrudWebClient;
 import ir.msob.manak.core.model.jima.security.User;
+import ir.msob.manak.domain.model.common.ServiceName;
 import ir.msob.manak.domain.model.toolhub.dto.ToolRegistryDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +19,9 @@ public class RegistryClient {
     private final WebClient webClient;
 
     public Flux<ToolRegistryDto> getStream(User user) {
-        DtoInfo dtoInfo = DtoInfo.info.getAnnotation(ToolRegistryDto.class);
-
         return this.webClient.get()
                 .uri(builder -> builder
-                        .host(dtoInfo.serviceName())
+                        .host(ServiceName.TOOL_HUB)
                         .path("/api/v1/registry")
                         .build())
                 .headers(headers -> domainCrudWebClient.setDefaultHeaders(headers, user))
