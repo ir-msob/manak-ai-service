@@ -25,7 +25,12 @@ class ToolProviderPublisher:
             provider.tools = get_tool_descriptors()
 
             message_dto: DtoMessage = DtoMessage(dto=provider)
-            channel_message: ChannelMessage = ChannelMessage(data=message_dto,user=SYSTEM_USER)
+            channel_message: ChannelMessage = ChannelMessage(key=provider.name,
+                                                             data=message_dto,
+                                                             user=SYSTEM_USER,
+                                                             channel=ConfigConfiguration.get_properties().tool.tool_provider_topic,
+                                                             callbacks=[],
+                                                             error_callbacks=[])
 
             await self.kafka_client.send(
                 topic=ConfigConfiguration.get_properties().tool.tool_provider_topic,

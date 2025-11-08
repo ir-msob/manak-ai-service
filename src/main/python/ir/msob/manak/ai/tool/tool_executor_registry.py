@@ -4,7 +4,6 @@ from src.main.python.ir.msob.manak.ai.tool.model.invoke_request import InvokeReq
 
 logger = logging.getLogger(__name__)
 
-
 # ---------------------- Tool Registry ----------------------
 class ToolExecutorRegistry:
     """Registry for dynamic tools."""
@@ -37,19 +36,27 @@ from src.main.python.ir.msob.manak.ai.document.model.document_chunk_response imp
 
 @tool_executor_registry.register("documentOverviewQuery")
 def document_overview_query(service, invoke_request: InvokeRequest) -> DocumentOverviewResponse:
+    logger.debug(f"📥 documentOverviewQuery received raw params: {invoke_request.params}")
     document_ids: Optional[set[str]] = invoke_request.params.get("documentIds")
     query: str = invoke_request.params.get("query")
     top_k: int = invoke_request.params.get("topK")
-    query_request: DocumentQueryRequest = DocumentQueryRequest(document_ids=document_ids, query=query, top_k=top_k)
+
+    logger.debug(f"Parsed values - documentIds: {document_ids}, query: {query}, topK: {top_k}")
+
+    query_request = DocumentQueryRequest(document_ids=document_ids, query=query, top_k=top_k)
     return service.document_service.overview_query(query_request)
 
 
 @tool_executor_registry.register("documentChunkQuery")
 def document_chunk_query(service, invoke_request: InvokeRequest) -> DocumentChunkResponse:
+    logger.debug(f"📥 documentChunkQuery received raw params: {invoke_request.params}")
     document_ids: Optional[set[str]] = invoke_request.params.get("documentIds")
     query: str = invoke_request.params.get("query")
     top_k: int = invoke_request.params.get("topK")
-    query_request: DocumentQueryRequest = DocumentQueryRequest(document_ids=document_ids, query=query, top_k=top_k)
+
+    logger.debug(f"Parsed values - documentIds: {document_ids}, query: {query}, topK: {top_k}")
+
+    query_request = DocumentQueryRequest(document_ids=document_ids, query=query, top_k=top_k)
     return service.document_service.chunk_query(query_request)
 
 
@@ -61,19 +68,25 @@ from src.main.python.ir.msob.manak.ai.repository.model.repository_chunk_response
 
 @tool_executor_registry.register("repositoryOverviewQuery")
 def repository_overview_query(service, invoke_request: InvokeRequest) -> RepositoryOverviewResponse:
+    logger.debug(f"📥 repositoryOverviewQuery received raw params: {invoke_request.params}")
     repository_ids: Optional[set[str]] = invoke_request.params.get("repositoryIds")
     query: str = invoke_request.params.get("query")
     top_k: int = invoke_request.params.get("topK")
-    query_request: RepositoryQueryRequest = RepositoryQueryRequest(repository_ids=repository_ids, query=query,
-                                                                   top_k=top_k)
+
+    logger.debug(f"Parsed values - repositoryIds: {repository_ids}, query: {query}, topK: {top_k}")
+
+    query_request = RepositoryQueryRequest(repository_ids=repository_ids, query=query, top_k=top_k)
     return service.repository_service.overview_query(query_request)
 
 
 @tool_executor_registry.register("repositoryChunkQuery")
 def repository_chunk_query(service, invoke_request: InvokeRequest) -> RepositoryChunkResponse:
+    logger.debug(f"📥 repositoryChunkQuery received raw params: {invoke_request.params}")
     repository_ids: Optional[set[str]] = invoke_request.params.get("repositoryIds")
     query: str = invoke_request.params.get("query")
     top_k: int = invoke_request.params.get("topK")
-    query_request: RepositoryQueryRequest = RepositoryQueryRequest(repository_ids=repository_ids, query=query,
-                                                                   top_k=top_k)
+
+    logger.debug(f"Parsed values - repositoryIds: {repository_ids}, query: {query}, topK: {top_k}")
+
+    query_request = RepositoryQueryRequest(repository_ids=repository_ids, query=query, top_k=top_k)
     return service.repository_service.chunk_query(query_request)

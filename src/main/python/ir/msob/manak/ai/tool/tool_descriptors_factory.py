@@ -16,14 +16,14 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         type=ToolParameter.ToolParameterType.STRING,
         description="Unique identifier for the tool",
         required=True,
-        examples=["documentOverviewQuery", "repositoryChunkQuery"]
+        example="documentOverviewQuery"
     )
 
     error_param = ToolParameter(
         type=ToolParameter.ToolParameterType.STRING,
         description="Error message if operation fails",
         required=False,
-        examples=["Invalid query parameter", "Document not found"]
+        example="Invalid query parameter"
     )
 
     # -----------------------
@@ -37,22 +37,22 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
             items=ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique document identifier",
-                examples=["doc_12345", "doc_67890"]
+                example="68fb2324f57252ea71d05a2f"
             ),
-            examples=["doc_12345", "doc_67890"]
+            example="68fb2324f57252ea71d05a2f"
         ),
         "query": ToolParameter(
             type=ToolParameter.ToolParameterType.STRING,
             description="Search query string",
             required=True,
-            examples=["machine learning algorithms", "python programming basics"],
+            example="machine learning algorithms",
             min_length=1
         ),
         "topK": ToolParameter(
             type=ToolParameter.ToolParameterType.NUMBER,
             description="Number of top results to return",
             required=True,
-            examples=[5, 10, 20],
+            example=10,
             minimum=1,
             maximum=100
         )
@@ -70,20 +70,19 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the document",
                 required=True,
-                examples=["doc_12345", "doc_67890"]
+                example="68fb2324f57252ea71d05a2f"
             ),
             "content": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Summary or overview content of the document",
                 required=True,
-                examples=[
-                    "This document covers machine learning fundamentals including supervised and unsupervised learning approaches."]
+                example="This document covers machine learning fundamentals including supervised and unsupervised learning approaches."
             ),
             "meta": ToolParameter(
                 type=ToolParameter.ToolParameterType.OBJECT,
                 description="Additional metadata about the document",
                 required=False,
-                examples=[{"author": "John Doe", "created_date": "2024-01-15", "category": "technical"}]
+                example={"author": "John Doe", "created_date": "2024-01-15", "category": "technical"}
             )
         }
     )
@@ -100,33 +99,32 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 items=ToolParameter(
                     type=ToolParameter.ToolParameterType.STRING,
                     description="Document ID",
-                    examples=["doc_12345", "doc_67890"]
+                    example="68fb2324f57252ea71d05a2f"
                 )
             ),
             "query": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Original search query",
                 required=True,
-                examples=["machine learning algorithms"]
+                example="machine learning algorithms"
             ),
             "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of results",
                 required=True,
-                examples=[5, 10]
+                example=10
             ),
             "overviews": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
                 description="List of document overviews matching the query",
                 required=True,
                 items=doc_overview_item_param,
-                examples=[
-                    {
-                        "documentId": "doc_12345",
-                        "content": "Machine learning overview...",
-                        "meta": {"category": "AI"}
-                    }
-                ]
+                example={
+                    "documentId": "68fb2324f57252ea71d05a2f",
+                    "content": "Machine learning overview...",
+                    "meta": {"category": "AI"}
+                }
+
             )
         }
     )
@@ -162,19 +160,19 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the source document",
                 required=True,
-                examples=["doc_12345", "doc_67890"]
+                example="68fb2324f57252ea71d05a2f"
             ),
             "content": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Detailed chunk content from the document",
                 required=True,
-                examples=["In this section, we discuss neural networks and their applications in computer vision."]
+                example="In this section, we discuss neural networks and their applications in computer vision."
             ),
             "meta": ToolParameter(
                 type=ToolParameter.ToolParameterType.OBJECT,
                 description="Chunk-specific metadata",
                 required=False,
-                examples=[{"page_number": 5, "section": "neural_networks", "word_count": 250}]
+                example={"page_number": 5, "section": "neural_networks", "word_count": 250}
             )
         }
     )
@@ -191,20 +189,20 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 items=ToolParameter(
                     type=ToolParameter.ToolParameterType.STRING,
                     description="Document ID",
-                    examples=["doc_12345", "doc_67890"]
+                    example="68fb2324f57252ea71d05a2f"
                 )
             ),
             "query": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Original search query",
                 required=True,
-                examples=["neural network applications"]
+                example="neural network applications"
             ),
             "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of chunk results",
                 required=True,
-                examples=[5, 10]
+                example=5
             ),
             "topChunks": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
@@ -216,8 +214,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Consolidated summary of all top chunks",
                 required=False,
-                examples=[
-                    "The search revealed several key applications of neural networks including image recognition, natural language processing, and predictive analytics."]
+                example="The search revealed several key applications of neural networks including image recognition, natural language processing, and predictive analytics."
             )
         }
     )
@@ -252,22 +249,22 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
             items=ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique repository identifier",
-                examples=["repo_12345", "repo_67890"]
+                example="68fb2324f57252ea71d05a2f"
             ),
-            examples=["repo_12345", "repo_67890"]
+            example="68fb2324f57252ea71d05a2f"
         ),
         "query": ToolParameter(
             type=ToolParameter.ToolParameterType.STRING,
             description="Search query for repository content",
             required=True,
-            examples=["authentication middleware", "database connection pool"],
+            example="authentication middleware",
             min_length=1
         ),
         "topK": ToolParameter(
             type=ToolParameter.ToolParameterType.NUMBER,
             description="Number of top results to return",
             required=True,
-            examples=[5, 10, 20],
+            example=10,
             minimum=1,
             maximum=100
         )
@@ -285,43 +282,43 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the repository",
                 required=True,
-                examples=["repo_12345", "repo_67890"]
+                example="68fb2324f57252ea71d05a2f"
             ),
             "name": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Name of the repository",
                 required=False,
-                examples=["backend-service", "frontend-app", "data-pipeline"]
+                example="backend-service"
             ),
             "branch": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Git branch name of the repository",
                 required=False,
-                examples=["main", "develop", "feature/auth-implementation"]
+                example="main"
             ),
             "documentId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the document within repository",
                 required=False,
-                examples=["src/auth/middleware.py", "docs/api_spec.md"]
+                example="src/auth/middleware.py"
             ),
             "content": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Overview content from the repository",
                 required=True,
-                examples=["Authentication middleware for handling JWT tokens in API requests."]
+                example="Authentication middleware for handling JWT tokens in API requests."
             ),
             "meta": ToolParameter(
                 type=ToolParameter.ToolParameterType.OBJECT,
                 description="Repository and document metadata",
                 required=False,
-                examples=[{"language": "python", "file_type": "source_code", "last_modified": "2024-01-15"}]
+                example={"language": "python", "file_type": "source_code", "last_modified": "2024-01-15"}
             ),
             "score": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Relevance score of the result (0.0 - 1.0)",
                 required=False,
-                examples=[0.85, 0.92, 0.76],
+                example=0.85,
                 minimum=0.0,
                 maximum=1.0
             ),
@@ -329,7 +326,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Type of the result item",
                 required=False,
-                examples=["overview"],
+                example="overview",
                 enum_values=["overview"]
             )
         }
@@ -347,20 +344,20 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 items=ToolParameter(
                     type=ToolParameter.ToolParameterType.STRING,
                     description="Repository ID",
-                    examples=["repo_12345", "repo_67890"]
+                    example="68fb2324f57252ea71d05a2f"
                 )
             ),
             "query": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Original search query",
                 required=True,
-                examples=["authentication middleware"]
+                example="authentication middleware"
             ),
             "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of results",
                 required=True,
-                examples=[5, 10]
+                example=10
             ),
             "overviews": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
@@ -402,44 +399,43 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the repository",
                 required=True,
-                examples=["repo_12345", "repo_67890"]
+                example="68fb2324f57252ea71d05a2f"
             ),
             "name": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Name of the repository",
                 required=False,
-                examples=["backend-service", "frontend-app"]
+                example="backend-service"
             ),
             "branch": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Git branch name",
                 required=False,
-                examples=["main", "develop"]
+                example="main"
             ),
             "documentId": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Unique identifier for the document",
                 required=False,
-                examples=["src/auth/middleware.py"]
+                example="src/auth/middleware.py"
             ),
             "content": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Detailed code or content chunk",
                 required=True,
-                examples=[
-                    "def authenticate_user(token: str) -> User:\n    # JWT verification logic\n    payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])\n    return User.get(payload['user_id'])"]
+                example="def authenticate_user(token: str) -> User:\n    # JWT verification logic\n    payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])\n    return User.get(payload['user_id'])"
             ),
             "meta": ToolParameter(
                 type=ToolParameter.ToolParameterType.OBJECT,
                 description="Chunk metadata including code-specific information",
                 required=False,
-                examples=[{"language": "python", "imports": ["jwt", "models"], "function_name": "authenticate_user"}]
+                example={"language": "python", "imports": ["jwt", "models"], "function_name": "authenticate_user"}
             ),
             "score": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Relevance score of the chunk",
                 required=False,
-                examples=[0.85, 0.92],
+                example=0.85,
                 minimum=0.0,
                 maximum=1.0
             ),
@@ -447,33 +443,33 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Full file path within the repository",
                 required=False,
-                examples=["src/auth/middleware.py", "docs/authentication.md"]
+                example="src/auth/middleware.py"
             ),
             "fileName": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Name of the file",
                 required=False,
-                examples=["middleware.py", "authentication.md"]
+                example="middleware.py"
             ),
             "chunkIndex": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Index position of this chunk within the file",
                 required=False,
-                examples=[0, 1, 2],
+                example=2,
                 minimum=0
             ),
             "totalChunks": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Total number of chunks in the file",
                 required=False,
-                examples=[5, 10, 15],
+                example=15,
                 minimum=1
             ),
             "type": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Type of the result",
                 required=False,
-                examples=["chunk"],
+                example="chunk",
                 enum_values=["chunk"]
             )
         }
@@ -491,20 +487,20 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 items=ToolParameter(
                     type=ToolParameter.ToolParameterType.STRING,
                     description="Repository ID",
-                    examples=["repo_12345", "repo_67890"]
+                    example="68fb2324f57252ea71d05a2f"
                 )
             ),
             "query": ToolParameter(
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Original search query",
                 required=True,
-                examples=["JWT authentication middleware"]
+                example="JWT authentication middleware"
             ),
             "topK": ToolParameter(
                 type=ToolParameter.ToolParameterType.NUMBER,
                 description="Requested number of chunk results",
                 required=True,
-                examples=[5, 10]
+                example=10
             ),
             "topChunks": ToolParameter(
                 type=ToolParameter.ToolParameterType.ARRAY,
@@ -516,8 +512,7 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
                 type=ToolParameter.ToolParameterType.STRING,
                 description="Consolidated summary of repository search results",
                 required=False,
-                examples=[
-                    "Found multiple authentication implementations across repositories including JWT middleware, OAuth handlers, and session management utilities."]
+                example="Found multiple authentication implementations across repositories including JWT middleware, OAuth handlers, and session management utilities."
             )
         }
     )

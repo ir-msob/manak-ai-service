@@ -40,13 +40,13 @@ class ToolParameter(ResponseModel):
         description="The default value to use when the parameter is not provided.",
     )
 
-    examples: Optional[List[Union[str, int, float, bool, dict, list]]] = Field(
-        default_factory=list,
+    example: Optional[Union[str, int, float, bool, dict, list]] = Field(
+        default=None,
         description=(
-            "A list of example values that illustrate how this parameter might appear in actual data.\n"
-            "Examples:\n"
-            "- ['John Doe']\n"
-            "- [1, 2, 3]\n"
+            "A example value that illustrate how this parameter might appear in actual data.\n"
+            "Example:\n"
+            "- 'John Doe'\n"
+            "- 2\n"
             "- ['application/json', 'text/plain']"
         ),
     )

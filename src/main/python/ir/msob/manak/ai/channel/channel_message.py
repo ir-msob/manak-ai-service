@@ -12,6 +12,6 @@ class ChannelMessage(ResponseModel):
     data: Any | None = None
     status: int | None = None
     channel: str | None = None
-    callbacks: List[Any] | None = None
-    error_callbacks: List[Any] | None = None
+    callbacks: List[Any] | None = []
+    error_callbacks: List[Any] | None = []
     classType: str = "ChannelMessage"
