@@ -1,15 +1,14 @@
 package ir.msob.manak.chat.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ToolParameter;
+import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ParameterDescriptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 /**
- * Utility (Spring bean) to convert ToolParameter structures into JSON Schema (and small examples).
- * <p>
+ * Utility (Spring bean) to convert ParameterDescriptor structures into JSON Schema (and small examples).
  * Uses a single injected ObjectMapper. For pretty output it uses
  * objectMapper.writerWithDefaultPrettyPrinter(), for compact output it uses objectMapper directly.
  */
@@ -19,14 +18,12 @@ public class ToolSchemaUtil {
 
     private final ObjectMapper objectMapper;
 
-
     /**
      * Convert a map of named parameters to a JSON Schema string (pretty printed).
      */
-    public String toJsonSchema(Map<String, ToolParameter> inputSchema) {
+    public String toJsonSchema(Map<String, ParameterDescriptor> inputSchema) {
         Map<String, Object> root = toJsonSchemaMap(inputSchema);
         try {
-            // pretty-print using writerWithDefaultPrettyPrinter()
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(root);
         } catch (Exception ex) {
             throw new RuntimeException("Failed to serialize input schema to JSON", ex);
@@ -36,7 +33,7 @@ public class ToolSchemaUtil {
     /**
      * Produce the JSON Schema as a Map (useful if you want to pass it directly without serializing).
      */
-    public Map<String, Object> toJsonSchemaMap(Map<String, ToolParameter> inputSchema) {
+    public Map<String, Object> toJsonSchemaMap(Map<String, ParameterDescriptor> inputSchema) {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("type", "object");
 
@@ -44,9 +41,9 @@ public class ToolSchemaUtil {
         List<String> required = new ArrayList<>();
 
         if (inputSchema != null) {
-            for (Map.Entry<String, ToolParameter> e : inputSchema.entrySet()) {
+            for (Map.Entry<String, ParameterDescriptor> e : inputSchema.entrySet()) {
                 String name = e.getKey();
-                ToolParameter param = e.getValue();
+                ParameterDescriptor param = e.getValue();
                 properties.put(name, buildParameterSchemaMap(param));
                 if (isRequired(param)) {
                     required.add(name);
@@ -63,9 +60,9 @@ public class ToolSchemaUtil {
     }
 
     /**
-     * Convert a single ToolParameter (root) to a JSON Schema string.
+     * Convert a single ParameterDescriptor (root) to a JSON Schema string.
      */
-    public String toJsonSchema(ToolParameter rootParam) {
+    public String toJsonSchema(ParameterDescriptor rootParam) {
         Map<String, Object> schema = buildParameterSchemaMap(rootParam);
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(schema);
@@ -77,10 +74,10 @@ public class ToolSchemaUtil {
     /**
      * Build a compact (single-line) JSON example for a parameter map (input).
      */
-    public String exampleForSchema(Map<String, ToolParameter> schema) {
+    public String exampleForSchema(Map<String, ParameterDescriptor> schema) {
         Map<String, Object> example = new LinkedHashMap<>();
         if (schema != null) {
-            for (Map.Entry<String, ToolParameter> e : schema.entrySet()) {
+            for (Map.Entry<String, ParameterDescriptor> e : schema.entrySet()) {
                 example.put(e.getKey(), buildExampleValue(e.getValue()));
             }
         }
@@ -92,10 +89,10 @@ public class ToolSchemaUtil {
     }
 
     /**
-     * Build a compact (single-line) JSON example for a single ToolParameter (output/error).
+     * Build a compact (single-line) JSON example for a single ParameterDescriptor (output/error).
      */
-    public String exampleForSchema(ToolParameter toolParameter) {
-        Object example = buildExampleValue(toolParameter);
+    public String exampleForSchema(ParameterDescriptor param) {
+        Object example = buildExampleValue(param);
         try {
             return objectMapper.writeValueAsString(example); // compact
         } catch (Exception ex) {
@@ -103,24 +100,24 @@ public class ToolSchemaUtil {
         }
     }
 
-    // ------------ helper methods (unchanged) ------------
+    // ------------ helper methods (adapted) ------------
 
-    private Map<String, Object> buildParameterSchemaMap(ToolParameter toolParameter) {
+    private Map<String, Object> buildParameterSchemaMap(ParameterDescriptor param) {
         Map<String, Object> schema = new LinkedHashMap<>();
-        if (toolParameter == null) {
+        if (param == null) {
             schema.put("type", "string");
             return schema;
         }
 
-        String jsonType = detectJsonType(toolParameter);
+        String jsonType = detectJsonType(param);
 
         if ("object".equals(jsonType)) {
             schema.put("type", "object");
             Map<String, Object> nestedProps = new LinkedHashMap<>();
             List<String> nestedRequired = new ArrayList<>();
-            Map<String, ToolParameter> props = safeGetProperties(toolParameter);
+            Map<String, ParameterDescriptor> props = safeGetProperties(param);
             if (props != null && !props.isEmpty()) {
-                for (Map.Entry<String, ToolParameter> sub : props.entrySet()) {
+                for (Map.Entry<String, ParameterDescriptor> sub : props.entrySet()) {
                     nestedProps.put(sub.getKey(), buildParameterSchemaMap(sub.getValue()));
                     if (isRequired(sub.getValue())) {
                         nestedRequired.add(sub.getKey());
@@ -132,46 +129,44 @@ public class ToolSchemaUtil {
             schema.put("additionalProperties", false);
         } else if ("array".equals(jsonType)) {
             schema.put("type", "array");
-            ToolParameter items = safeGetItems(toolParameter);
+            ParameterDescriptor items = safeGetItems(param);
             if (items != null) schema.put("items", buildParameterSchemaMap(items));
             else schema.put("items", Collections.singletonMap("type", "string"));
         } else {
             schema.put("type", jsonType);
         }
 
-        if (toolParameter.getDescription() != null) schema.put("description", toolParameter.getDescription());
-        if (toolParameter.getExample() != null) schema.put("example", buildExampleValue(toolParameter));
-        if (toolParameter.getDefaultValue() != null) schema.put("default", toolParameter.getDefaultValue());
+        if (param.getDescription() != null) schema.put("description", param.getDescription());
+        if (param.getDefaultValue() != null) schema.put("default", param.getDefaultValue());
+        if (param.getExamples() != null && !param.getExamples().isEmpty()) schema.put("examples", param.getExamples());
 
-        if (toolParameter.getEnumValues() != null && !toolParameter.getEnumValues().isEmpty()) {
-            schema.put("enum", toolParameter.getEnumValues());
+        if (param.getEnumValues() != null && !param.getEnumValues().isEmpty()) {
+            schema.put("enum", param.getEnumValues());
         }
-        if (toolParameter.getMinimum() != null) schema.put("minimum", toolParameter.getMinimum());
-        if (toolParameter.getMaximum() != null) schema.put("maximum", toolParameter.getMaximum());
-        if (toolParameter.getMinLength() != null) schema.put("minLength", toolParameter.getMinLength());
-        if (toolParameter.getMaxLength() != null) schema.put("maxLength", toolParameter.getMaxLength());
-        if (toolParameter.getPattern() != null) schema.put("pattern", toolParameter.getPattern());
+        if (param.getMinimum() != null) schema.put("minimum", param.getMinimum());
+        if (param.getMaximum() != null) schema.put("maximum", param.getMaximum());
+        if (param.getMinLength() != null) schema.put("minLength", param.getMinLength());
+        if (param.getMaxLength() != null) schema.put("maxLength", param.getMaxLength());
+        if (param.getPattern() != null) schema.put("pattern", param.getPattern());
 
-        if (Boolean.TRUE.equals(toolParameter.getNullable())) {
+        if (Boolean.TRUE.equals(param.getNullable())) {
             schema.compute("type", (k, t) -> Arrays.asList(t, "null"));
         }
 
         return schema;
     }
 
-    private Object buildExampleValue(ToolParameter param) {
+    private Object buildExampleValue(ParameterDescriptor param) {
         if (param == null) return null;
 
-        Object example = param.getExample();
-        if (example != null) return example;
+        if (param.getExamples() != null && !param.getExamples().isEmpty()) return param.getExamples().getFirst();
 
-        Object def = param.getDefaultValue();
-        if (def != null) return List.of(def);
+        if (param.getDefaultValue() != null) return param.getDefaultValue();
 
         return null;
     }
 
-    private String detectJsonType(ToolParameter param) {
+    private String detectJsonType(ParameterDescriptor param) {
         if (param == null || param.getType() == null) return "string";
         return switch (param.getType()) {
             case STRING -> "string";
@@ -182,7 +177,7 @@ public class ToolSchemaUtil {
         };
     }
 
-    private boolean isRequired(ToolParameter param) {
+    private boolean isRequired(ParameterDescriptor param) {
         if (param == null) return false;
         try {
             return param.isRequired();
@@ -191,7 +186,7 @@ public class ToolSchemaUtil {
         }
     }
 
-    private Map<String, ToolParameter> safeGetProperties(ToolParameter param) {
+    private Map<String, ParameterDescriptor> safeGetProperties(ParameterDescriptor param) {
         try {
             return param.getProperties();
         } catch (Exception e) {
@@ -199,7 +194,7 @@ public class ToolSchemaUtil {
         }
     }
 
-    private ToolParameter safeGetItems(ToolParameter param) {
+    private ParameterDescriptor safeGetItems(ParameterDescriptor param) {
         try {
             return param.getItems();
         } catch (Exception e) {

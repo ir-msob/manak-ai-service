@@ -1,7 +1,7 @@
 package ir.msob.manak.chat.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ToolParameter;
+import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ParameterDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,18 +13,9 @@ import java.util.regex.Pattern;
 /**
  * RobustSafeParameterCoercer
  * <p>
- * A conservative, fault-tolerant coercion utility that converts raw input values (typically produced by
- * generative AI models) into the types expected by {@link ToolParameter} schemas.
- * <p>
- * Key guarantees:
- * - Never throws conversion-related exceptions to the caller — all problems are swallowed and logged at DEBUG level.
- * - Always non-destructive: if coercion heuristics fail, the original raw value is returned.
- * - Recursively coerces nested OBJECTs and ARRAYs according to provided schema.
- * - Implements many heuristics to support model-generated formats (JSON-in-strings, CSV-like strings, base64 JSON, hex, locale numbers, etc.).
- * <p>
- * Usage:
- * RobustSafeParameterCoercer coercer = new RobustSafeParameterCoercer(objectMapper);
- * Map<String,Object> coerced = coercer.coerce(rawInputMap, toolInputSchemaMap);
+ * Reworked to use {@link ParameterDescriptor} (the new parameter model).
+ * Behavior and heuristics are preserved from the original implementation,
+ * but method names and schema accessors were adapted for the new model.
  */
 public record RobustSafeParameterCoercer(ObjectMapper mapper) {
     private static final Logger log = LoggerFactory.getLogger(RobustSafeParameterCoercer.class);
@@ -34,20 +25,20 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
     private static final Pattern DECIMAL_OR_SCI = Pattern.compile("^-?\\d*[.,]?\\d+(?:[eE][+-]?\\d+)?$");
     private static final Pattern HEX_PATTERN = Pattern.compile("^0x[0-9a-fA-F]+$");
 
-    public Map<String, Object> coerce(Map<String, Object> input, Map<String, ToolParameter> schema) {
+    public Map<String, Object> coerce(Map<String, Object> input, Map<String, ParameterDescriptor> schema) {
         if (input == null) return Collections.emptyMap();
         if (schema == null || schema.isEmpty()) return new HashMap<>(input);
 
         Map<String, Object> out = new LinkedHashMap<>();
 
         // First coerce schema-declared keys
-        for (Map.Entry<String, ToolParameter> e : schema.entrySet()) {
+        for (Map.Entry<String, ParameterDescriptor> e : schema.entrySet()) {
             String key = e.getKey();
-            ToolParameter def = e.getValue();
+            ParameterDescriptor def = e.getValue();
             Object raw = input.get(key);
 
             if (raw == null) {
-                out.put(key, def.getDefaultValue());
+                out.put(key, def == null ? null : def.getDefaultValue());
                 continue;
             }
 
@@ -63,7 +54,7 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
         return out;
     }
 
-    private Object coerceWithAllHeuristics(Object raw, ToolParameter def) {
+    private Object coerceWithAllHeuristics(Object raw, ParameterDescriptor def) {
         try {
             // Direct attempt
             Object direct = tryCoerceDirect(raw, def);
@@ -98,25 +89,25 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
                 }
 
                 // CSV-like -> array fallback
-                if (def.getType() == ToolParameter.ToolParameterType.ARRAY) {
+                if (def != null && def.getType() != null && def.getType() == ParameterDescriptor.ToolParameterType.ARRAY) {
                     Object arr = coerceToArray(raw, def.getItems());
                     if (matchesType(arr, def)) return arr;
                 }
 
                 // numeric normalization
-                if (def.getType() == ToolParameter.ToolParameterType.NUMBER) {
+                if (def != null && def.getType() != null && def.getType() == ParameterDescriptor.ToolParameterType.NUMBER) {
                     Number n = normalizeAndParseNumber(s);
                     if (n != null) return n;
                 }
             }
 
             // structural conversions
-            if (def.getType() == ToolParameter.ToolParameterType.ARRAY && raw instanceof Map<?, ?>) {
+            if (def != null && def.getType() == ParameterDescriptor.ToolParameterType.ARRAY && raw instanceof Map<?, ?>) {
                 Object fromMap = tryConvertNumericKeyedMapToList((Map<?, ?>) raw, def.getItems());
                 if (matchesType(fromMap, def)) return fromMap;
             }
 
-            if (def.getType() == ToolParameter.ToolParameterType.OBJECT && raw instanceof List<?>) {
+            if (def != null && def.getType() == ParameterDescriptor.ToolParameterType.OBJECT && raw instanceof List<?>) {
                 Object converted = tryConvertArrayToMap((List<?>) raw, def.getProperties());
                 if (matchesType(converted, def)) return converted;
             }
@@ -129,7 +120,7 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
         }
     }
 
-    private Object tryCoerceDirect(Object raw, ToolParameter def) {
+    private Object tryCoerceDirect(Object raw, ParameterDescriptor def) {
         if (def == null || def.getType() == null) return raw;
 
         return switch (def.getType()) {
@@ -217,7 +208,7 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
         }
     }
 
-    private Object coerceToArray(Object raw, ToolParameter itemSchema) {
+    private Object coerceToArray(Object raw, ParameterDescriptor itemSchema) {
         try {
             List<Object> list;
 
@@ -260,7 +251,7 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
         }
     }
 
-    private Object coerceToObject(Object raw, Map<String, ToolParameter> properties) {
+    private Object coerceToObject(Object raw, Map<String, ParameterDescriptor> properties) {
         try {
             Map<String, Object> map;
 
@@ -368,7 +359,7 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
         }
     }
 
-    private Object tryConvertNumericKeyedMapToList(Map<?, ?> map, ToolParameter itemSchema) {
+    private Object tryConvertNumericKeyedMapToList(Map<?, ?> map, ParameterDescriptor itemSchema) {
         try {
             TreeMap<Integer, Object> ordered = new TreeMap<>();
             boolean anyNumeric = false;
@@ -394,7 +385,7 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
         }
     }
 
-    private Object tryConvertArrayToMap(List<?> list, Map<String, ToolParameter> propertiesSchema) {
+    private Object tryConvertArrayToMap(List<?> list, Map<String, ParameterDescriptor> propertiesSchema) {
         try {
             Map<String, Object> result = new LinkedHashMap<>();
             boolean converted = false;
@@ -478,7 +469,7 @@ public record RobustSafeParameterCoercer(ObjectMapper mapper) {
         }
     }
 
-    private boolean matchesType(Object value, ToolParameter def) {
+    private boolean matchesType(Object value, ParameterDescriptor def) {
         if (def == null || def.getType() == null) return false;
         return switch (def.getType()) {
             case STRING -> value instanceof String;

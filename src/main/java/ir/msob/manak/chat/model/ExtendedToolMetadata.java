@@ -12,6 +12,5 @@ import java.io.Serializable;
 @Builder
 public record ExtendedToolMetadata(boolean returnDirect,
                                    String outputSchemaJson,
-                                   String errorSchemaJson,
-                                   String version) implements ToolMetadata, Serializable {
+                                   String errorSchemaJson) implements ToolMetadata, Serializable {
 }

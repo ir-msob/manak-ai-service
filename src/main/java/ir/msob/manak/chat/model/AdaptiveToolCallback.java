@@ -1,14 +1,19 @@
 package ir.msob.manak.chat.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.jima.core.commons.logger.Logger;
 import ir.msob.jima.core.commons.logger.LoggerFactory;
+import ir.msob.manak.domain.model.toolhub.dto.InvokeResponse;
+import ir.msob.manak.domain.service.toolhub.util.ToolExecutorUtil;
 import lombok.SneakyThrows;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -41,10 +46,10 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
     @Override
     public String call(String toolInput) {
         log.debug("Tool callback invoked for tool: {} with input: {}", toolDefinition.name(), toolInput);
-
+        Map<String, Object> params = null;
         try {
             // Parse JSON string to Map<String, Object>
-            Map<String, Object> params = parseInput(toolInput);
+            params = parseInput(toolInput);
 
             // Call tool handler
             Object result = toolInvocationAdapter.handle(params);
@@ -54,7 +59,7 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
 
         } catch (Exception e) {
             log.error("Error in MyToolCallback for tool: {}", toolDefinition.name(), e);
-            return createErrorResponse(e);
+            return createErrorResponse(e, params);
         }
     }
 
@@ -110,9 +115,21 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
     /**
      * Create plain text error response (not JSON)
      */
-    private String createErrorResponse(Exception e) {
-        return String.format("Error executing tool '%s': %s",
-                toolDefinition.name(), e.getMessage());
+    private String createErrorResponse(Exception e, Map<String, Object> params) throws JsonProcessingException {
+        String toolId = toolDefinition.name();
+        String formattedMessage = ToolExecutorUtil.buildErrorResponse(toolId, e);
+
+        InvokeResponse invokeResponse = InvokeResponse.builder()
+                .toolId(toolId)
+                .error(InvokeResponse.ErrorInfo.builder()
+                        .code("EXECUTION_ERROR")
+                        .message(formattedMessage)
+                        .stackTrace(Arrays.toString(e.getStackTrace()))
+                        .details(params)
+                        .build())
+                .executedAt(Instant.now())
+                .build();
+        return objectMapper.writeValueAsString(invokeResponse);
     }
 
     @Override

@@ -82,7 +82,7 @@ public interface ModelProviderService {
      * Determines whether a tool should be included based on the request.
      */
     private boolean isToolIncluded(ToolRegistryDto toolDto, List<String> requestedTools) {
-        boolean included = requestedTools.isEmpty() || requestedTools.contains(toolDto.getToolId());
+        boolean included = requestedTools == null || requestedTools.isEmpty() || requestedTools.contains(toolDto.getToolId());
         log.trace("Tool '{}' inclusion check: {}", toolDto.getToolId(), included);
         return included;
     }
@@ -119,8 +119,7 @@ public interface ModelProviderService {
     private ExtendedToolMetadata createToolMetadata(ToolRegistryDto toolDto) {
         return ExtendedToolMetadata.builder()
                 .outputSchemaJson(getToolSchemaUtil().toJsonSchema(toolDto.getOutputSchema()))
-                .errorSchemaJson(getToolSchemaUtil().toJsonSchema(toolDto.getErrorSchema()))
-                .version(toolDto.getVersion())
+                .errorSchemaJson(null)
                 .build();
     }
 

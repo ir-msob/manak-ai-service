@@ -28,7 +28,7 @@ public class RegistryClient {
                 .retrieve()
                 .bodyToFlux(ToolRegistryDto.class)
                 .doOnSubscribe(sub -> log.info("Requesting tool registry stream"))
-                .doOnNext(tool -> log.debug("Received tool from registry stream: id={}, version={}", tool.getToolId(), tool.getVersion()))
+                .doOnNext(tool -> log.debug("Received tool from registry stream: id={}", tool.getToolId()))
                 .doOnComplete(() -> log.info("Completed receiving tool registry stream"))
                 .doOnError(e -> log.error("Error while streaming tool registry: {}", e.getMessage(), e))
                 .onErrorResume(e -> {
