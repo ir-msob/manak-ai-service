@@ -3,7 +3,7 @@ server:
 
 python:
   application:
-    name: "vectorhub"
+    name: "vector-hub"
     base_url: "http://localhost:${server.port}"
   profiles:
     active:

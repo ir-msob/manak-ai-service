@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 from pydantic import Field
 from src.main.python.ir.msob.manak.ai.base.response_model import ResponseModel
 
-class ToolParameter(ResponseModel):
+class ParameterDescriptor(ResponseModel):
     """
     Represents a parameter definition used to describe complex JSON structures.
 
@@ -40,7 +40,7 @@ class ToolParameter(ResponseModel):
         description="The default value to use when the parameter is not provided.",
     )
 
-    example: Optional[Union[str, int, float, bool, dict, list]] = Field(
+    examples: Optional[List[Union[str, int, float, bool, dict, list]]] = Field(
         default=None,
         description=(
             "A example value that illustrate how this parameter might appear in actual data.\n"
@@ -56,7 +56,7 @@ class ToolParameter(ResponseModel):
         description="Indicates whether this parameter is required in the context where it is used.",
     )
 
-    items: Optional[ToolParameter] = Field(
+    items: Optional[ParameterDescriptor] = Field(
         default=None,
         description=(
             "Describes the structure or type of each item in an array.\n"
@@ -66,7 +66,7 @@ class ToolParameter(ResponseModel):
         ),
     )
 
-    properties: Optional[Dict[str, ToolParameter]] = Field(
+    properties: Optional[Dict[str, ParameterDescriptor]] = Field(
         default_factory=dict,
         description=(
             "Describes the properties of an object when type = 'OBJECT'.\n"
@@ -128,4 +128,4 @@ class ToolParameter(ResponseModel):
     )
 
 
-ToolParameter.model_rebuild()  # Required for self-referencing fields
+ParameterDescriptor.model_rebuild()  # Required for self-referencing fields
