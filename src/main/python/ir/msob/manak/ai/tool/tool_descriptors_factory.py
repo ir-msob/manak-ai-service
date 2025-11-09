@@ -1,13 +1,11 @@
-from typing import List, Dict, Any
+from typing import List, Dict
 
-from src.main.python.ir.msob.manak.ai.tool.model.tool_descriptor import ToolDescriptor
+from src.main.python.ir.msob.manak.ai.tool.model.error_descriptor import ErrorDescriptor
+from src.main.python.ir.msob.manak.ai.tool.model.example import Example
 from src.main.python.ir.msob.manak.ai.tool.model.parameter_descriptor import ParameterDescriptor
 from src.main.python.ir.msob.manak.ai.tool.model.response_descriptor import ResponseDescriptor
 from src.main.python.ir.msob.manak.ai.tool.model.response_status import ResponseStatus
-from src.main.python.ir.msob.manak.ai.tool.model.example import Example
-from src.main.python.ir.msob.manak.ai.tool.model.error_descriptor import ErrorDescriptor
-from src.main.python.ir.msob.manak.ai.tool.model.retry_policy import RetryPolicy
-from src.main.python.ir.msob.manak.ai.tool.model.timeout_policy import TimeoutPolicy
+from src.main.python.ir.msob.manak.ai.tool.model.tool_descriptor import ToolDescriptor
 
 
 def get_tool_descriptors() -> List[ToolDescriptor]:
@@ -286,14 +284,22 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Individual repository overview result",
         required=True,
         properties={
-            "repositoryId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Repository id", required=True),
-            "name": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Name of repository", required=False),
-            "branch": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Git branch", required=False),
-            "documentId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Document id inside repo", required=False),
-            "content": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Overview content", required=True),
-            "meta": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.OBJECT, description="Repository metadata", required=False),
-            "score": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER, description="Relevance score", required=False, minimum=0.0, maximum=1.0),
-            "type": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Type of the result", required=False, enum_values=["overview"])
+            "repositoryId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                                description="Repository id", required=True),
+            "name": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                        description="Name of repository", required=False),
+            "branch": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Git branch",
+                                          required=False),
+            "documentId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                              description="Document id inside repo", required=False),
+            "content": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                           description="Overview content", required=True),
+            "meta": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.OBJECT,
+                                        description="Repository metadata", required=False),
+            "score": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER,
+                                         description="Relevance score", required=False, minimum=0.0, maximum=1.0),
+            "type": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                        description="Type of the result", required=False, enum_values=["overview"])
         }
     )
 
@@ -302,10 +308,16 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Complete overview response for repository search",
         required=True,
         properties={
-            "repositoryIds": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY, description="List of repository IDs", items=ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING)),
-            "query": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Original search query", required=True),
-            "topK": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER, description="Requested number of results", required=True),
-            "overviews": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY, description="List of repository overviews", required=True, items=repo_overview_item)
+            "repositoryIds": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY,
+                                                 description="List of repository IDs", items=ParameterDescriptor(
+                    type=ParameterDescriptor.ToolParameterType.STRING, description="Repository ID")),
+            "query": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                         description="Original search query", required=True),
+            "topK": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER,
+                                        description="Requested number of results", required=True),
+            "overviews": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY,
+                                             description="List of repository overviews", required=True,
+                                             items=repo_overview_item)
         }
     )
 
@@ -355,18 +367,30 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Individual repository chunk with file and position details",
         required=True,
         properties={
-            "repositoryId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Repository id", required=True),
-            "name": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Repository name", required=False),
-            "branch": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Git branch", required=False),
-            "documentId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Document id inside repo", required=False),
-            "content": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Code/content chunk", required=True),
-            "meta": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.OBJECT, description="Chunk metadata", required=False),
-            "score": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER, description="Relevance score", required=False, minimum=0.0, maximum=1.0),
-            "filePath": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Full file path", required=False),
-            "fileName": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="File name", required=False),
-            "chunkIndex": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER, description="Index of chunk inside file", required=False, minimum=0),
-            "totalChunks": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER, description="Total chunks in file", required=False, minimum=1),
-            "type": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Type of result", required=False, enum_values=["chunk"])
+            "repositoryId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                                description="Repository id", required=True),
+            "name": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                        description="Repository name", required=False),
+            "branch": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Git branch",
+                                          required=False),
+            "documentId": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                              description="Document id inside repo", required=False),
+            "content": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                           description="Code/content chunk", required=True),
+            "meta": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.OBJECT, description="Chunk metadata",
+                                        required=False),
+            "score": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER,
+                                         description="Relevance score", required=False, minimum=0.0, maximum=1.0),
+            "filePath": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                            description="Full file path", required=False),
+            "fileName": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="File name",
+                                            required=False),
+            "chunkIndex": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER,
+                                              description="Index of chunk inside file", required=False, minimum=0),
+            "totalChunks": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER,
+                                               description="Total chunks in file", required=False, minimum=1),
+            "type": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Type of result",
+                                        required=False, enum_values=["chunk"])
         }
     )
 
@@ -375,11 +399,18 @@ def get_tool_descriptors() -> List[ToolDescriptor]:
         description="Detailed chunk-level response for repository search",
         required=True,
         properties={
-            "repositoryIds": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY, description="List of repo IDs", items=ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING)),
-            "query": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Original search query", required=True),
-            "topK": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER, description="Requested number of chunk results", required=True),
-            "topChunks": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY, description="List of top matching repository chunks", required=True, items=repo_chunk_item),
-            "finalSummary": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING, description="Consolidated summary", required=False)
+            "repositoryIds": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY,
+                                                 description="List of repo IDs", items=ParameterDescriptor(
+                    type=ParameterDescriptor.ToolParameterType.STRING, description="Repository ID")),
+            "query": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                         description="Original search query", required=True),
+            "topK": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.NUMBER,
+                                        description="Requested number of chunk results", required=True),
+            "topChunks": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.ARRAY,
+                                             description="List of top matching repository chunks", required=True,
+                                             items=repo_chunk_item),
+            "finalSummary": ParameterDescriptor(type=ParameterDescriptor.ToolParameterType.STRING,
+                                                description="Consolidated summary", required=False)
         }
     )
 
