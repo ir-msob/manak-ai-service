@@ -11,12 +11,12 @@ spring:
     web-application-type: REACTIVE
   data:
     mongodb:
-      uri: mongodb://localhost:27017/${spring.application}
+      uri: mongodb://localhost:27017/${spring.application.name}
   kafka:
     bootstrap-servers: localhost:9092
     # Consumer configurations (optional)
     consumer:
-      group-id: ${spring.application}
+      group-id: ${spring.application.name}
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       bootstrap-servers: localhost:9092
