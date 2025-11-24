@@ -1,12 +1,12 @@
 package ir.msob.manak.chat.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.msob.manak.chat.client.RegistryClient;
 import ir.msob.manak.chat.util.RobustSafeParameterCoercer;
 import ir.msob.manak.chat.util.ToolSchemaUtil;
 import ir.msob.manak.core.model.jima.security.User;
 import ir.msob.manak.domain.model.chat.chat.ChatRequestDto;
 import ir.msob.manak.domain.model.toolhub.dto.ToolRegistryDto;
+import ir.msob.manak.domain.service.client.ToolHubClient;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public interface ModelProviderService {
 
     Logger log = LoggerFactory.getLogger(ModelProviderService.class);
 
-    RegistryClient getRegistryClient();
+    ToolHubClient getToolHubClient();
 
     <CM extends ChatModel> CM getChatModel(String key);
 
@@ -70,7 +70,7 @@ public interface ModelProviderService {
     private Flux<ToolCallback> getDynamicTools(ChatRequestDto request, User user) {
         log.debug("🔍 Fetching available tools from registry...");
 
-        return getRegistryClient().getStream(user)
+        return getToolHubClient().getStream(user)
                 .filter(toolDto -> isToolIncluded(toolDto, request.getTools()))
                 .map(this::prepareToolCallback)
                 .doOnNext(tool -> log.debug("✅ Registered tool callback for '{}'", tool.getToolDefinition().name()))

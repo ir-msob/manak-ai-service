@@ -1,9 +1,9 @@
 package ir.msob.manak.chat.model;
 
-import ir.msob.manak.chat.client.GatewayClient;
 import ir.msob.manak.core.service.jima.security.UserService;
 import ir.msob.manak.domain.model.toolhub.dto.InvokeRequest;
 import ir.msob.manak.domain.model.toolhub.dto.InvokeResponse;
+import ir.msob.manak.domain.service.client.ToolHubClient;
 import ir.msob.manak.domain.service.toolhub.util.ToolExecutorUtil;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.UUID;
 public class ToolInvoker {
     private static final Logger log = LoggerFactory.getLogger(ToolInvoker.class);
 
-    private final GatewayClient gatewayClient;
+    private final ToolHubClient toolHubClient;
     private final UserService userService;
 
     public Object invoke(String toolId, Map<String, Object> params) {
@@ -33,7 +33,7 @@ public class ToolInvoker {
         try {
             log.debug("Invoking tool '{}'", toolId);
 
-            return gatewayClient.invoke(request, userService.getSystemUser())
+            return toolHubClient.invoke(request, userService.getSystemUser())
                     .map(this::extractResponse)
                     .onErrorResume(e -> {
                         log.error("Error invoking tool '{}': {}", toolId, e.getMessage(), e);
