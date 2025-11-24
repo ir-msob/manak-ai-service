@@ -1,7 +1,7 @@
 package ir.msob.manak.chat.model;
 
 import ir.msob.manak.chat.util.RobustSafeParameterCoercer;
-import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ParameterDescriptor;
+import ir.msob.manak.domain.model.common.model.ParameterDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package ir.msob.manak.chat.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ir.msob.manak.domain.model.toolhub.toolprovider.tooldescriptor.ParameterDescriptor;
+import ir.msob.manak.domain.model.common.model.ParameterDescriptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
