@@ -95,22 +95,34 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
      */
     @SneakyThrows
     private String serializeResult(Object result) {
+
+        String toolName = toolDefinition.name();
+
+        // Null
         if (result == null) {
-            log.info("Tool {} returned null result", toolDefinition.name());
+            log.info("Tool '{}' returned null result", toolName);
             return "{}";
         }
 
-        try {
-            String jsonResult = objectMapper.writeValueAsString(result);
-            log.debug("Tool {} execution completed successfully. Result: {}", toolDefinition.name(), jsonResult);
-            return jsonResult;
+        // Basic types
+        if (result instanceof String
+                || result instanceof Number
+                || result instanceof Boolean) {
+            return String.valueOf(result);
+        }
 
+        // Try JSON for everything else (Map, List, Set, DTO, Object, ...)
+        try {
+            String json = objectMapper.writeValueAsString(result);
+            log.debug("Tool '{}' executed successfully. Result: {}", toolName, json);
+            return json;
         } catch (Exception e) {
-            log.warn("Failed to serialize result for tool {}, using string representation", toolDefinition.name(), e);
-            // Fallback: return string representation
+            // Last fallback
+            log.warn("Failed to serialize result for tool '{}', using toString()", toolName, e);
             return String.valueOf(result);
         }
     }
+
 
     /**
      * Create plain text error response (not JSON)

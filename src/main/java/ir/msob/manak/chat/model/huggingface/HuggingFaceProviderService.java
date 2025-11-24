@@ -2,9 +2,9 @@ package ir.msob.manak.chat.model.huggingface;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.manak.chat.model.ModelProviderService;
-import ir.msob.manak.chat.model.ToolInvoker;
 import ir.msob.manak.chat.util.ToolSchemaUtil;
 import ir.msob.manak.domain.service.client.ToolHubClient;
+import ir.msob.manak.domain.service.toolhub.ToolInvoker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;
