@@ -23,19 +23,19 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(classes = {Application.class, ContainerConfiguration.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @CommonsLog
-public class ModelSpecificationCharacteristicRestResourceIT
+class ModelSpecificationCharacteristicRestResourceIT
         extends BaseCharacteristicCrudRestResourceTest<ModelSpecification, ModelSpecificationDto, ModelSpecificationCriteria, ModelSpecificationRepository, ModelSpecificationService, ModelSpecificationDataProvider, ModelSpecificationService, ModelSpecificationCharacteristicCrudDataProvider>
         implements ModelSpecificationTypeReference {
 
     @SneakyThrows
     @BeforeAll
-    public static void beforeAll() {
+    static void beforeAll() {
         CoreTestData.init(new ObjectId(), new ObjectId());
     }
 
     @SneakyThrows
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         getDataProvider().cleanups();
         ModelSpecificationDataProvider.createMandatoryNewDto();
         ModelSpecificationDataProvider.createNewDto();

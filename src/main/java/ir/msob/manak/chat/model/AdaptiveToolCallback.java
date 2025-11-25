@@ -11,6 +11,7 @@ import lombok.SneakyThrows;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
+import org.springframework.lang.NonNull;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -22,29 +23,22 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
                                    ObjectMapper objectMapper) implements ToolCallback {
     private static final Logger log = LoggerFactory.getLogger(AdaptiveToolCallback.class);
 
-    public AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata toolMetadata,
-                                ToolInvocationAdapter toolInvocationAdapter, ObjectMapper objectMapper) {
-        this.toolDefinition = toolDefinition;
-        this.toolMetadata = toolMetadata;
-        this.toolInvocationAdapter = toolInvocationAdapter;
-        this.objectMapper = objectMapper;
-
-        log.debug("MyToolCallback initialized for tool: {}", toolDefinition.name());
-    }
-
+    @NonNull
     @Override
     public ToolDefinition getToolDefinition() {
         return toolDefinition;
     }
 
+    @NonNull
     @Override
     public ToolMetadata getToolMetadata() {
         return toolMetadata;
     }
 
+    @NonNull
     @SneakyThrows
     @Override
-    public String call(String toolInput) {
+    public String call(@NonNull String toolInput) {
         log.debug("Tool callback invoked for tool: {} with input: {}", toolDefinition.name(), toolInput);
         Map<String, Object> params = null;
         try {
@@ -144,6 +138,7 @@ public record AdaptiveToolCallback(ToolDefinition toolDefinition, ToolMetadata t
         return objectMapper.writeValueAsString(invokeResponse);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "MyToolCallback{tool=" + toolDefinition.name() + "}";

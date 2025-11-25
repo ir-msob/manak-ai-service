@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import java.security.Principal;
-import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping(ChatRestResource.BASE_URI)
@@ -27,7 +26,7 @@ public class ChatRestResource {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<Flux<String>> chat(@RequestBody ChatRequestDto dto, Principal principal) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Flux<String>> chat(@RequestBody ChatRequestDto dto, Principal principal) {
         logger.info("REST request to chat, dto : {}", dto);
         User user = userService.getUser(principal);
         Flux<String> res = service.chat(dto, user);
