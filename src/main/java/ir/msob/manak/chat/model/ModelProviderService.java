@@ -43,7 +43,12 @@ public interface ModelProviderService {
      */
     default Flux<String> chat(ChatRequestDto request, User user) {
         log.info("💬 Starting chat for model '{}', message: '{}'", request.getModelSpecificationKey(), request.getMessage());
-        return getDynamicTools(request, user)
+
+        Flux<ToolCallback> toolCallbacksFlux = request.isToolsEnabled() ?
+                getDynamicTools(request, user) :
+                Flux.empty();
+
+        return toolCallbacksFlux
                 .collectList()
                 .doOnNext(tools -> log.info("🧩 {} dynamic tools loaded for model '{}'", tools.size(), request.getModelSpecificationKey()))
                 .flatMapMany(toolCallbacks -> buildChatClient(request, toolCallbacks))
@@ -57,10 +62,13 @@ public interface ModelProviderService {
     private Flux<String> buildChatClient(ChatRequestDto request, List<ToolCallback> toolCallbacks) {
         log.debug("⚙️ Building ChatClient for model '{}' with {} tools...", request.getModelSpecificationKey(), toolCallbacks.size());
 
-        return ChatClient.create(getChatModel(request.getModelSpecificationKey()))
-                .prompt(request.getMessage())
-                .toolCallbacks(toolCallbacks)
-                .stream()
+        var spec = ChatClient.create(getChatModel(request.getModelSpecificationKey()))
+                .prompt(request.getMessage());
+
+        if (!toolCallbacks.isEmpty())
+            spec.toolCallbacks(toolCallbacks);
+
+        return spec.stream()
                 .content();
     }
 
