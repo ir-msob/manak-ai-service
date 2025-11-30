@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: chat
+    name: ai
   profiles:
     active: dev
   main:

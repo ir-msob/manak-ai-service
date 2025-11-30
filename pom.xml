@@ -7,9 +7,9 @@
         <artifactId>manak-parent</artifactId>
         <version>0.1.0</version>
     </parent>
-    <artifactId>aiagent-service</artifactId>
-    <name>chat</name>
-    <description>Chat Service</description>
+    <artifactId>ai-service</artifactId>
+    <name>AI</name>
+    <description>AI Service</description>
     <properties>
         <!-- Manak Version -->
         <manak-parent.version>0.1.0</manak-parent.version>
