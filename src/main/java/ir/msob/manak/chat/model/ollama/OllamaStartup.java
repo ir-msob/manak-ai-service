@@ -4,14 +4,17 @@ import io.micrometer.observation.ObservationRegistry;
 import ir.msob.jima.core.commons.filter.Filter;
 import ir.msob.jima.core.commons.logger.Logger;
 import ir.msob.jima.core.commons.logger.LoggerFactory;
+import ir.msob.manak.chat.model.ModelEntry;
 import ir.msob.manak.chat.modelspecification.ModelSpecificationService;
 import ir.msob.manak.core.service.jima.security.UserService;
+import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
 import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationCriteria;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.model.tool.DefaultToolExecutionEligibilityPredicate;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.ollama.OllamaEmbeddingModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.ai.ollama.management.ModelManagementOptions;
@@ -36,7 +39,7 @@ public class OllamaStartup {
     @PostConstruct
     public void startup() {
         ModelSpecificationCriteria criteria = ModelSpecificationCriteria.builder()
-                .type(Filter.eq(OLLAMA_TYPE))
+                .providerType(Filter.eq(OLLAMA_TYPE))
                 .build();
 
         modelSpecificationService.getStream(criteria, userService.getSystemUser())
@@ -52,23 +55,43 @@ public class OllamaStartup {
                                 .numPredict(spec.getNumPredict())
                                 .build();
 
-                        OllamaChatModel chatModel = new OllamaChatModel(
-                                ollamaApi,
-                                options,
-                                toolCallingManager,
-                                observationRegistry,
-                                modelManagementOptions,
-                                new DefaultToolExecutionEligibilityPredicate(),
-                                retryTemplate
-                        );
 
-                        ollamaRegistry.getModels().put(spec.getKey(), chatModel);
 
+                        if(spec.getModelTypes().contains(ModelSpecification.ModelType.CHAT)) {
+                            OllamaChatModel chatModel = new OllamaChatModel(
+                                    ollamaApi,
+                                    options,
+                                    toolCallingManager,
+                                    observationRegistry,
+                                    modelManagementOptions,
+                                    new DefaultToolExecutionEligibilityPredicate(),
+                                    retryTemplate
+                            );
+
+                            ollamaRegistry.getChatModels().add(ModelEntry.<OllamaChatModel>builder()
+                                    .key(spec.getKey())
+                                    .modelTypes(spec.getModelTypes())
+                                    .model(chatModel)
+                                    .build());
+                        }
+                        else if (spec.getModelTypes().contains(ModelSpecification.ModelType.EMBEDDING)) {
+                            OllamaEmbeddingModel embeddingModel = new OllamaEmbeddingModel(
+                                    ollamaApi,
+                                    options,
+                                    observationRegistry,
+                                    modelManagementOptions
+                            );
+                            ollamaRegistry.getEmbeddingModels().add(ModelEntry.<OllamaEmbeddingModel>builder()
+                                    .key(spec.getKey())
+                                    .modelTypes(spec.getModelTypes())
+                                    .model(embeddingModel)
+                                    .build());
+                        }
                     } catch (Exception e) {
                         log.error("Error creating model for specification: {}", spec, e);
                     }
                 })
-                .doOnComplete(() -> log.info("Loaded {} models from database", ollamaRegistry.getModels().size()))
+                .doOnComplete(() -> log.info("Loaded Ollama {} chat models and {} embedding models from database", ollamaRegistry.getChatModels().size(), ollamaRegistry.getEmbeddingModels().size()))
                 .subscribe();
 
     }

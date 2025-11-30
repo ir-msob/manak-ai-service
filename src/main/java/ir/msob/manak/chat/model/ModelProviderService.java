@@ -7,6 +7,8 @@ import ir.msob.manak.core.model.jima.security.User;
 import ir.msob.manak.domain.model.chat.chat.ChatRequestDto;
 import ir.msob.manak.domain.model.chat.chat.ChatRequestDto.Message;
 import ir.msob.manak.domain.model.chat.chat.ChatRequestDto.TemplateRef;
+import ir.msob.manak.domain.model.chat.embedding.EmbeddingRequestDto;
+import ir.msob.manak.domain.model.chat.embedding.EmbeddingResponseDto;
 import ir.msob.manak.domain.model.toolhub.dto.ToolRegistryDto;
 import ir.msob.manak.domain.service.client.ToolHubClient;
 import ir.msob.manak.domain.service.toolhub.ToolInvoker;
@@ -18,11 +20,13 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.DefaultChatOptions;
+import org.springframework.ai.embedding.*;
 import org.springframework.ai.template.st.StTemplateRenderer;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.DefaultToolDefinition;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -43,6 +47,8 @@ public interface ModelProviderService {
     ToolHubClient getToolHubClient();
 
     <CM extends ChatModel> CM getChatModel(String key);
+
+    <CM extends AbstractEmbeddingModel> CM getEmbeddingModel(String key);
 
     ToolInvoker getToolInvoker();
 
@@ -261,4 +267,56 @@ public interface ModelProviderService {
                     throw new IllegalArgumentException("Only INLINE and BASE64 TemplateRef types are supported. Found: " + ref.getType());
         }
     }
+
+    default Mono<EmbeddingResponseDto> embedding(EmbeddingRequestDto request, User user) {
+        log.info("🧩 Starting embedding. model='{}', requestId='{}'",
+                request == null ? null : request.getModel(),
+                request == null ? null : request.getRequestId());
+
+        return Mono.justOrEmpty(request)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("EmbeddingRequestDto must not be null")))
+                .flatMap(this::executeEmbedding)
+                .doOnSuccess(res -> log.info("🧩 Embedding completed. model='{}', vectors='{}'",
+                        res.getModel(), res.getEmbeddings().size()))
+                .doOnError(err -> log.error("❌ Embedding failed. model='{}', requestId='{}', error={}",
+                        request.getModel(), request.getRequestId(), err.toString()));
+    }
+
+
+    private Mono<EmbeddingResponseDto> executeEmbedding(EmbeddingRequestDto request) {
+        log.debug("⚙️ Building EmbeddingClient for model='{}', requestId='{}'",
+                request.getModel(), request.getRequestId());
+
+        EmbeddingOptions options = null;
+        if (request.getOptions() != null) {
+            options = EmbeddingOptionsBuilder.builder()
+                    .withDimensions(request.getOptions().getDimensions())
+                    .withModel(request.getOptions().getModel())
+                    .build();
+        }
+
+        EmbeddingRequest embeddingRequest = new EmbeddingRequest(request.getInputs(), options);
+        AbstractEmbeddingModel embeddingModel = getEmbeddingModel(request.getModel());
+        EmbeddingResponse embeddingResponse = embeddingModel.call(embeddingRequest);
+        return Mono.just(prepareEmbeddingResponse(request, embeddingResponse));
+    }
+
+    private EmbeddingResponseDto prepareEmbeddingResponse(EmbeddingRequestDto request, EmbeddingResponse response) {
+        return EmbeddingResponseDto.builder()
+                .model(request.getModel())
+                .requestId(request.getRequestId())
+                .embeddings(response.getResults().stream()
+                        .map(this::prepareEmbedding)
+                        .toList())
+                .build();
+    }
+
+    private ir.msob.manak.domain.model.chat.embedding.Embedding prepareEmbedding(Embedding result) {
+        return ir.msob.manak.domain.model.chat.embedding.Embedding.builder()
+                .index(result.getIndex())
+                .embedding(result.getOutput())
+                .build();
+    }
+
+
 }

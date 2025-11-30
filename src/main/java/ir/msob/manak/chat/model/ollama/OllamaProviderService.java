@@ -1,12 +1,15 @@
 package ir.msob.manak.chat.model.ollama;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ir.msob.jima.core.commons.exception.datanotfound.DataNotFoundException;
 import ir.msob.manak.chat.model.ModelProviderService;
 import ir.msob.manak.chat.util.ToolSchemaUtil;
+import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
 import ir.msob.manak.domain.service.client.ToolHubClient;
 import ir.msob.manak.domain.service.toolhub.ToolInvoker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.embedding.AbstractEmbeddingModel;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,9 +27,25 @@ public class OllamaProviderService implements ModelProviderService {
         return toolHubClient;
     }
 
-    @Override
     public <CM extends ChatModel> CM getChatModel(String key) {
-        return (CM) ollamaRegistry.getModels().get(key);
+        return ollamaRegistry.getChatModels()
+                .stream()
+                .filter(entry -> entry.getKey().equals(key))
+                .filter(entry -> entry.getModelTypes().contains(ModelSpecification.ModelType.CHAT))
+                .findFirst()
+                .map(entry -> (CM) entry.getModel())
+                .orElseThrow(() -> new DataNotFoundException("Model not found for key: " + key));
+    }
+
+    public <CM extends AbstractEmbeddingModel> CM getEmbeddingModel(String key) {
+        return ollamaRegistry.getEmbeddingModels()
+                .stream()
+                .filter(entry -> entry.getKey().equals(key))
+                .filter(entry -> entry.getModelTypes().contains(ModelSpecification.ModelType.EMBEDDING))
+                .findFirst()
+                .map(entry -> (CM) entry.getModel())
+                .orElseThrow(() -> new DataNotFoundException(
+                        "Model not found for key: " + key));
     }
 
     @Override

@@ -3,8 +3,10 @@ package ir.msob.manak.chat.model.huggingface;
 import ir.msob.jima.core.commons.filter.Filter;
 import ir.msob.jima.core.commons.logger.Logger;
 import ir.msob.jima.core.commons.logger.LoggerFactory;
+import ir.msob.manak.chat.model.ModelEntry;
 import ir.msob.manak.chat.modelspecification.ModelSpecificationService;
 import ir.msob.manak.core.service.jima.security.UserService;
+import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
 import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationCriteria;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -25,23 +27,34 @@ public class HuggingFaceStartup {
     @PostConstruct
     public void startup() {
         ModelSpecificationCriteria criteria = ModelSpecificationCriteria.builder()
-                .type(Filter.eq(HUGGING_FACE_TYPE))
+                .providerType(Filter.eq(HUGGING_FACE_TYPE))
                 .build();
 
         modelSpecificationService.getStream(criteria, userService.getSystemUser())
                 .doOnNext(spec -> {
                     try {
 
-                        HuggingfaceChatModel chatModel = new HuggingfaceChatModel("", spec.getBaseUrl());
 
-                        hfRegistry.getModels().put(spec.getKey(), chatModel);
+                        if (spec.getModelTypes().contains(ModelSpecification.ModelType.CHAT)) {
+                            HuggingfaceChatModel chatModel = new HuggingfaceChatModel("", spec.getBaseUrl());
+
+                            hfRegistry.getChatModels().add(ModelEntry.<HuggingfaceChatModel>builder()
+                                    .key(spec.getKey())
+                                    .modelTypes(spec.getModelTypes())
+                                    .model(chatModel)
+                                    .build());
+                        } else if (spec.getModelTypes().contains(ModelSpecification.ModelType.EMBEDDING)) {
+
+                        }
+
                         log.info("Loaded HuggingFace model for key {}", spec.getKey());
+
 
                     } catch (Exception e) {
                         log.error("Error creating HuggingFace model for specification: {}", spec, e);
                     }
                 })
-                .doOnComplete(() -> log.info("Loaded {} HuggingFace models", hfRegistry.getModels().size()))
+                .doOnComplete(() -> log.info("Loaded HuggingFace {} chat models and {} embedding models from database", hfRegistry.getChatModels().size(), hfRegistry.getEmbeddingModels().size()))
                 .subscribe();
     }
 }

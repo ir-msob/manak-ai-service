@@ -61,18 +61,15 @@ public class ModelSpecificationDataProvider extends DomainCrudDataProvider<Model
     }
 
     /**
-     * @throws JsonPointerException if there is an error creating the JSON patch.
      */
     @Override
     @SneakyThrows
     public JsonPatch getJsonPatch() {
         List<JsonPatchOperation> operations = getMandatoryJsonPatchOperation();
-        operations.add(new ReplaceOperation(new JsonPointer(String.format("/%s", ModelSpecification.FN.description)), new TextNode(UPDATED_STRING)));
         return new JsonPatch(operations);
     }
 
     /**
-     * @throws JsonPointerException if there is an error creating the JSON patch.
      */
     @Override
     @SneakyThrows
@@ -124,9 +121,7 @@ public class ModelSpecificationDataProvider extends DomainCrudDataProvider<Model
      * @throws JsonPointerException if there is an error creating the JSON pointer.
      */
     public List<JsonPatchOperation> getMandatoryJsonPatchOperation() throws JsonPointerException {
-        List<JsonPatchOperation> operations = new ArrayList<>();
-        operations.add(new ReplaceOperation(new JsonPointer(String.format("/%s", ModelSpecification.FN.name)), new TextNode(UPDATED_STRING)));
-        return operations;
+        return new ArrayList<>();
     }
 
     @Override
