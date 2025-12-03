@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.manak.ai.util.RobustSafeParameterCoercer;
 import ir.msob.manak.ai.util.ToolSchemaUtil;
 import ir.msob.manak.core.model.jima.security.User;
-import ir.msob.manak.domain.model.chat.chat.ChatRequestDto;
-import ir.msob.manak.domain.model.chat.chat.ChatRequestDto.Message;
-import ir.msob.manak.domain.model.chat.chat.ChatRequestDto.TemplateRef;
-import ir.msob.manak.domain.model.chat.embedding.EmbeddingRequestDto;
-import ir.msob.manak.domain.model.chat.embedding.EmbeddingResponseDto;
+import ir.msob.manak.domain.model.ai.chat.ChatRequestDto;
+import ir.msob.manak.domain.model.ai.chat.ChatRequestDto.Message;
+import ir.msob.manak.domain.model.ai.chat.ChatRequestDto.TemplateRef;
+import ir.msob.manak.domain.model.ai.embedding.EmbeddingRequestDto;
+import ir.msob.manak.domain.model.ai.embedding.EmbeddingResponseDto;
 import ir.msob.manak.domain.model.toolhub.dto.ToolRegistryDto;
 import ir.msob.manak.domain.service.client.ToolHubClient;
 import ir.msob.manak.domain.service.toolhub.ToolInvoker;
@@ -311,8 +311,8 @@ public interface ModelProviderService {
                 .build();
     }
 
-    private ir.msob.manak.domain.model.chat.embedding.Embedding prepareEmbedding(Embedding result) {
-        return ir.msob.manak.domain.model.chat.embedding.Embedding.builder()
+    private ir.msob.manak.domain.model.ai.embedding.Embedding prepareEmbedding(Embedding result) {
+        return ir.msob.manak.domain.model.ai.embedding.Embedding.builder()
                 .index(result.getIndex())
                 .embedding(result.getOutput())
                 .build();

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.jima.core.commons.exception.datanotfound.DataNotFoundException;
 import ir.msob.manak.ai.model.ModelProviderService;
 import ir.msob.manak.ai.util.ToolSchemaUtil;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecification;
 import ir.msob.manak.domain.service.client.ToolHubClient;
 import ir.msob.manak.domain.service.toolhub.ToolInvoker;
 import lombok.RequiredArgsConstructor;

@@ -5,9 +5,9 @@ import ir.msob.jima.core.commons.resource.Resource;
 import ir.msob.jima.core.commons.shared.ResourceType;
 import ir.msob.manak.core.service.jima.crud.restful.domain.service.DomainCrudRestResource;
 import ir.msob.manak.core.service.jima.security.UserService;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationCriteria;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationDto;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecification;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecificationCriteria;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecificationDto;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 

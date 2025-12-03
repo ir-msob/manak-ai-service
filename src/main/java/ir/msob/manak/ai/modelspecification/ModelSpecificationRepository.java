@@ -2,7 +2,7 @@ package ir.msob.manak.ai.modelspecification;
 
 import ir.msob.jima.core.ral.mongo.commons.query.MongoQueryBuilder;
 import ir.msob.manak.core.service.jima.crud.base.domain.DomainCrudRepository;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecification;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.stereotype.Repository;
 

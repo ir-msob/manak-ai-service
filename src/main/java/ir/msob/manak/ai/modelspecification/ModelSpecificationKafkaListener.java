@@ -8,10 +8,10 @@ import ir.msob.jima.core.commons.shared.ResourceType;
 import ir.msob.jima.crud.api.kafka.client.ChannelUtil;
 import ir.msob.manak.core.service.jima.crud.kafka.domain.service.DomainCrudKafkaListener;
 import ir.msob.manak.core.service.jima.security.UserService;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationCriteria;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationDto;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationTypeReference;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecification;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecificationCriteria;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecificationDto;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecificationTypeReference;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.stereotype.Component;
 

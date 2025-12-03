@@ -1,7 +1,7 @@
 package ir.msob.manak.ai.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecification;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecification;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

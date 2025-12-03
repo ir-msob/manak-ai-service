@@ -1,7 +1,7 @@
 package ir.msob.manak.ai.modelspecification;
 
 import ir.msob.manak.core.test.jima.crud.base.childdomain.characteristic.BaseCharacteristicCrudDataProvider;
-import ir.msob.manak.domain.model.chat.modelspecification.ModelSpecificationDto;
+import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecificationDto;
 import org.springframework.stereotype.Component;
 
 @Component

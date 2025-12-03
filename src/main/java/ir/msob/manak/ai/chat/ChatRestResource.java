@@ -4,7 +4,7 @@ import ir.msob.jima.core.commons.logger.Logger;
 import ir.msob.jima.core.commons.logger.LoggerFactory;
 import ir.msob.manak.core.model.jima.security.User;
 import ir.msob.manak.core.service.jima.security.UserService;
-import ir.msob.manak.domain.model.chat.chat.ChatRequestDto;
+import ir.msob.manak.domain.model.ai.chat.ChatRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
