@@ -1,12 +1,10 @@
 package ir.msob.manak.ai.model.ollama;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.msob.jima.core.commons.exception.datanotfound.DataNotFoundException;
 import ir.msob.manak.ai.model.ModelProviderService;
-import ir.msob.manak.ai.util.ToolSchemaUtil;
+import ir.msob.manak.ai.model.ToolManager;
 import ir.msob.manak.domain.model.ai.modelspecification.ModelSpecification;
-import ir.msob.manak.domain.service.client.ToolHubClient;
-import ir.msob.manak.domain.service.toolhub.ToolInvoker;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.AbstractEmbeddingModel;
@@ -17,15 +15,8 @@ import org.springframework.stereotype.Service;
 public class OllamaProviderService implements ModelProviderService {
 
     private final OllamaRegistry ollamaRegistry;
-    private final ToolHubClient toolHubClient;
-    private final ToolInvoker toolInvoker;
-    private final ToolSchemaUtil toolSchemaUtil;
-    private final ObjectMapper objectMapper;
-
-    @Override
-    public ToolHubClient getToolHubClient() {
-        return toolHubClient;
-    }
+    @Getter
+    private final ToolManager toolManager;
 
     public <CM extends ChatModel> CM getChatModel(String key) {
         return ollamaRegistry.getChatModels()
@@ -56,21 +47,6 @@ public class OllamaProviderService implements ModelProviderService {
                 .findFirst()
                 .map(entry -> (CM) entry.getModel())
                 .orElseThrow(() -> new DataNotFoundException("Model not found for key: " + key));
-    }
-
-    @Override
-    public ToolInvoker getToolInvoker() {
-        return toolInvoker;
-    }
-
-    @Override
-    public ToolSchemaUtil getToolSchemaUtil() {
-        return toolSchemaUtil;
-    }
-
-    @Override
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
     }
 
 }

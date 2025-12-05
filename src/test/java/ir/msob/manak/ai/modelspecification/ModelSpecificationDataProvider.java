@@ -58,6 +58,7 @@ public class ModelSpecificationDataProvider extends DomainCrudDataProvider<Model
     }
 
     /**
+     *
      */
     @Override
     @SneakyThrows
@@ -67,6 +68,7 @@ public class ModelSpecificationDataProvider extends DomainCrudDataProvider<Model
     }
 
     /**
+     *
      */
     @Override
     @SneakyThrows

@@ -4,7 +4,6 @@ import ir.msob.manak.ai.model.ModelEntry;
 import lombok.Getter;
 import org.springframework.ai.embedding.AbstractEmbeddingModel;
 import org.springframework.ai.huggingface.HuggingfaceChatModel;
-import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
