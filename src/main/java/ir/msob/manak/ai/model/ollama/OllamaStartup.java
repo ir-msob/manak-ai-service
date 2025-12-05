@@ -67,6 +67,11 @@ public class OllamaStartup {
                 registerEmbeddingModel(spec, api);
             }
 
+            if (spec.getModelTypes().contains(ModelSpecification.ModelType.SUMMARIZER)) {
+                registerSummarizerModel(spec, api);
+            }
+
+
         } catch (Exception e) {
             log.error("❌ Failed to create Ollama model for spec: {}", spec.getKey(), e);
         }
@@ -143,6 +148,41 @@ public class OllamaStartup {
 
         log.info("✔️ Registered EMBEDDING model: {}", spec.getKey());
     }
+
+    /**
+     * ─────────────────────────────────────────────────────────────
+     * Register Summarizer Model
+     * ─────────────────────────────────────────────────────────────
+     */
+    private void registerSummarizerModel(ModelSpecification spec, OllamaApi api) {
+
+        OllamaChatOptions options = OllamaChatOptions.builder()
+                .model(spec.getModelName())
+                .temperature(spec.getTemperature())
+                .numPredict(spec.getNumPredict())
+                .build();
+
+        OllamaChatModel chatModel = new OllamaChatModel(
+                api,
+                options,
+                toolCallingManager,
+                observationRegistry,
+                modelManagementOptions,
+                new DefaultToolExecutionEligibilityPredicate(),
+                retryTemplate
+        );
+
+        ollamaRegistry.getSummarizerModels().add(
+                ModelEntry.<OllamaChatModel>builder()
+                        .key(spec.getKey())
+                        .modelTypes(spec.getModelTypes())
+                        .model(chatModel)
+                        .build()
+        );
+
+        log.info("✔️ Registered Summarizer model: {}", spec.getKey());
+    }
+
 
     /**
      * ─────────────────────────────────────────────────────────────

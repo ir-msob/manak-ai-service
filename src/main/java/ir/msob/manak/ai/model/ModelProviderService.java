@@ -9,6 +9,8 @@ import ir.msob.manak.domain.model.ai.chat.ChatRequestDto.Message;
 import ir.msob.manak.domain.model.ai.chat.ChatRequestDto.TemplateRef;
 import ir.msob.manak.domain.model.ai.embedding.EmbeddingRequestDto;
 import ir.msob.manak.domain.model.ai.embedding.EmbeddingResponseDto;
+import ir.msob.manak.domain.model.ai.summarizer.SummarizerRequestDto;
+import ir.msob.manak.domain.model.ai.summarizer.SummarizerResponseDto;
 import ir.msob.manak.domain.model.toolhub.dto.ToolRegistryDto;
 import ir.msob.manak.domain.service.client.ToolHubClient;
 import ir.msob.manak.domain.service.toolhub.ToolInvoker;
@@ -47,6 +49,8 @@ public interface ModelProviderService {
     ToolHubClient getToolHubClient();
 
     <CM extends ChatModel> CM getChatModel(String key);
+
+    <CM extends ChatModel> CM getSummarizerModel(String key);
 
     <CM extends AbstractEmbeddingModel> CM getEmbeddingModel(String key);
 
@@ -114,7 +118,10 @@ public interface ModelProviderService {
             // assistant template
             if (templates.containsKey(ChatRequestDto.Role.ASSISTANT)) {
                 String assistantTemplate = resolveTemplate(templates.get(ChatRequestDto.Role.ASSISTANT));
-                spec.messages(new AssistantMessage(assistantTemplate, vars));
+                spec.messages(AssistantMessage.builder()
+                        .content(assistantTemplate)
+                        .properties(vars)
+                        .build());
                 log.debug("Added assistant template message.");
             }
             // user template (if present and no role-based messages)
@@ -137,7 +144,10 @@ public interface ModelProviderService {
                         log.trace("Appended role=SYSTEM message.");
                     }
                     case ASSISTANT -> {
-                        spec.messages(new AssistantMessage(content, vars));
+                        spec.messages(AssistantMessage.builder()
+                                .content(content)
+                                .properties(vars)
+                                .build());
                         log.trace("Appended role=ASSISTANT message.");
                     }
                     case USER -> {
@@ -289,9 +299,9 @@ public interface ModelProviderService {
 
         EmbeddingOptions options = null;
         if (request.getOptions() != null) {
-            options = EmbeddingOptionsBuilder.builder()
-                    .withDimensions(request.getOptions().getDimensions())
-                    .withModel(request.getOptions().getModel())
+            options = EmbeddingOptions.builder()
+                    .dimensions(request.getOptions().getDimensions())
+                    .model(request.getModel())
                     .build();
         }
 
@@ -319,4 +329,29 @@ public interface ModelProviderService {
     }
 
 
+    default Mono<SummarizerResponseDto> summarize(SummarizerRequestDto request, User user) {
+        Objects.requireNonNull(request, "SummarizerRequestDto must not be null");
+        log.debug("⚙️ Building SummarizerClient for model '{}' (requestId='{}')",
+                request.getModel(), request.getRequestId());
+
+        var chatClient = ChatClient.create(getSummarizerModel(request.getModel()));
+
+        List<String> summaries = request.getInputs()
+                .stream()
+                .map(s -> chatClient.prompt(s).call().content())
+                .toList();
+
+        String merged = Strings.join(summaries, '\n');
+
+        String finalSummary = chatClient.prompt(merged).call().content();
+
+        return Mono.just(
+                SummarizerResponseDto.builder()
+                        .requestId(request.getRequestId())
+                        .model(request.getModel())
+                        .finalSummary(finalSummary)
+                        .inputSummaries(summaries)
+                        .build()
+        );
+    }
 }

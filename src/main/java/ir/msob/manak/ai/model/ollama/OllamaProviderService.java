@@ -48,6 +48,16 @@ public class OllamaProviderService implements ModelProviderService {
                         "Model not found for key: " + key));
     }
 
+    public <CM extends ChatModel> CM getSummarizerModel(String key) {
+        return ollamaRegistry.getSummarizerModels()
+                .stream()
+                .filter(entry -> entry.getKey().equals(key))
+                .filter(entry -> entry.getModelTypes().contains(ModelSpecification.ModelType.SUMMARIZER))
+                .findFirst()
+                .map(entry -> (CM) entry.getModel())
+                .orElseThrow(() -> new DataNotFoundException("Model not found for key: " + key));
+    }
+
     @Override
     public ToolInvoker getToolInvoker() {
         return toolInvoker;

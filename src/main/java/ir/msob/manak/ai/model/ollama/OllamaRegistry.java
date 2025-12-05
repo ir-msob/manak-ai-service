@@ -16,4 +16,7 @@ public class OllamaRegistry {
 
     @Getter
     private final List<ModelEntry<OllamaEmbeddingModel>> embeddingModels = new ArrayList<>();
+
+    @Getter
+    private final List<ModelEntry<OllamaChatModel>> summarizerModels = new ArrayList<>();
 }
